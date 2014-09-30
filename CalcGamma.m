@@ -320,7 +320,7 @@ try
         end
         
         % Print computation status (in %) to stdout
-        fprintf('%0.1f%%\n', (x + 2 * res) / (4 * res) * 100);
+        % fprintf('%0.1f%%\n', (x + 2 * res) / (4 * res) * 100);
     end
    
 % If GPU fails, revert to CPU computation
@@ -412,7 +412,7 @@ catch
         end
         
         % Print computation status (in %) to stdout
-        fprintf('%0.1f%%\n', (x + 2 * res) / (4 * res) * 100);
+        % fprintf('%0.1f%%\n', (x + 2 * res) / (4 * res) * 100);
     end
 end
     
