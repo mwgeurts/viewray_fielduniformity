@@ -36,9 +36,9 @@ if ~name == 0
     handles.path = path;
       
     % Initialize data arrays
-    handles.([head,'h1X']) = [];
-    handles.([head,'h1Y']) = [];
-    handles.([head,'h1time']) = [];
+    handles.([head,'X']) = [];
+    handles.([head,'Y']) = [];
+    handles.([head,'T']) = [];
 
     % Open file handle
     fid = fopen(fullfile(path, name), 'r');

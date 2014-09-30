@@ -87,7 +87,7 @@ end
 c = c + 1;
 table{c,1} = 'Time difference';
 if isfield(handles, [head,'T']) && size(handles.([head,'T']), 2) > 0
-    table{c,2} = sprintf('%0.2f%%', ((r-l)-handles.time)/handles.time*100);
+    table{c,2} = sprintf('%0.2f sec', (r-l) - handles.time);
 end
 
 % SNR
@@ -182,12 +182,12 @@ end
 c = c + 1;
 table{c,1} = 'MLC X FWHM difference';
 if isfield(handles, [head,'X']) && size(handles.([head,'X']), 2) > 0
-    table{c,2} = sprintf('%0.2f%%', (r-l - refXFWHM)/refXFWHM * 100);
+    table{c,2} = sprintf('%0.2f mm', r-l - refXFWHM);
 end
 
 % MLC X Flatness
 c = c + 1;
-table{c,1} = 'MLC X flatness';
+table{c,1} = 'MLC X flatness (central 80%)';
 if isfield(handles, [head,'X']) && size(handles.([head,'X']), 2) > 0
     dmax = max(handles.([head,'X'])(2,ceil(li+(ri-li)*0.1):floor(ri-(ri-li)*0.1)));
     dmin = min(handles.([head,'X'])(2,ceil(li+(ri-li)*0.1):floor(ri-(ri-li)*0.1)));
@@ -197,7 +197,7 @@ end
 
 % MLC X Areal Symmetry
 c = c + 1;
-table{c,1} = 'MLC X areal symmetry';
+table{c,1} = 'MLC X areal symmetry (central 80%)';
 if isfield(handles, [head,'X']) && size(handles.([head,'X']), 2) > 0
     aleft = interp1(handles.([head,'X'])(1,:), ...
         handles.([head,'X'])(2,:), l+(r-l)*0.1:...
@@ -212,7 +212,7 @@ end
 
 % MLC X Point Symmetry
 % c = c + 1;
-% table{c,1} = 'MLC X point symmetry';
+% table{c,1} = 'MLC X point symmetry (central 80%)';
 % if isfield(handles, [head,'X']) && size(handles.([head,'X']), 2) > 0   
 %     table{c,2} = sprintf('%0.2f%%', max(abs(1 - aleft(a/5:a) ./ ...
 %         fliplr(aright(1:4*a/5+1)))) / (2 * aleft(a+1)) * 100);
@@ -220,7 +220,7 @@ end
 
 % MLC X Max Gamma
 c = c + 1;
-table{c,1} = 'MLC X max gamma';
+table{c,1} = 'MLC X max gamma (central 50%)';
 if isfield(handles, [head,'X']) && size(handles.([head,'X']), 2) > 0
     % Report max gamma
     table{c,2} = sprintf('%0.2f', max(handles.([head,'X'])(3,li:ri)));
@@ -309,12 +309,12 @@ end
 c = c + 1;
 table{c,1} = 'MLC Y FWHM difference';
 if isfield(handles, [head,'Y']) && size(handles.([head,'Y']), 2) > 0
-    table{c,2} = sprintf('%0.2f%%', (abs(r-l) - refYFWHM)/refYFWHM * 100);
+    table{c,2} = sprintf('%0.2f mm', abs(r-l) - refYFWHM);
 end
 
 % MLC Y Flatness
 c = c + 1;
-table{c,1} = 'MLC Y flatness';
+table{c,1} = 'MLC Y flatness (central 80%)';
 if isfield(handles, [head,'Y']) && size(handles.([head,'Y']), 2) > 0
     dmax = max(handles.([head,'Y'])(2,ceil(li+(ri-li)*0.1):floor(ri-(ri-li)*0.1)));
     dmin = min(handles.([head,'Y'])(2,ceil(li+(ri-li)*0.1):floor(ri-(ri-li)*0.1)));
@@ -324,7 +324,7 @@ end
 
 % MLC Y Areal Symmetry
 c = c + 1;
-table{c,1} = 'MLC Y areal symmetry';
+table{c,1} = 'MLC Y areal symmetry (central 80%)';
 if isfield(handles, [head,'Y']) && size(handles.([head,'Y']), 2) > 0
     aleft = interp1(handles.([head,'Y'])(1,:), ...
         handles.([head,'Y'])(2,:), l+(r-l)*0.1:...
@@ -339,7 +339,7 @@ end
 
 % MLC Y Point Symmetry
 % c = c + 1;
-% table{c,1} = 'MLC Y point symmetry';
+% table{c,1} = 'MLC Y point symmetry (central 80%)';
 % if isfield(handles, [head,'Y']) && size(handles.([head,'Y']), 2) > 0   
 %     table{c,2} = sprintf('%0.2f%%', max(abs(1 - aleft(a/5:a) ./ ...
 %         fliplr(aright(1:4*a/5+1)))) / (2 * aleft(a+1)) * 100);
@@ -347,7 +347,7 @@ end
 
 % MLC Y Max Gamma
 c = c + 1;
-table{c,1} = 'MLC Y max gamma';
+table{c,1} = 'MLC Y max gamma (central 50%)';
 if isfield(handles, [head,'Y']) && size(handles.([head,'Y']), 2) > 0
     % Report max gamma
     table{c,2} = sprintf('%0.2f', max(handles.([head,'Y'])(3,li:ri)));

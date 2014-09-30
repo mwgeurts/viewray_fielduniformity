@@ -167,13 +167,16 @@ function h1clear_Callback(hObject, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Clear data
-%
-%
-%
-% ....
-%
-%
-%
+handles.h1num = [];
+handles.h1width = [];
+handles.h1bkgdcnt = [];
+handles.h1bkgd = [];
+handles.h1cal = [];
+handles.h1ignore = [];
+handles.h1data = [];
+handles.h1X = [];
+handles.h1Y = [];
+handles.h1T = [];
 
 % Clear file
 set(handles.h1file, 'String', '');
@@ -224,7 +227,7 @@ if isfield(handles, 'h2data') && ~isempty(handles.h2data) > 0
     handles = UpdateStatistics(handles, 'h2');
 
     % Update plot to show gamma
-    set(handles.h2display, 'Value', 1);
+    set(handles.h2display, 'Value', 3);
     handles = UpdateDisplay(handles, 'h2');
 end
 
@@ -263,13 +266,16 @@ function h2clear_Callback(hObject, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Clear data
-%
-%
-%
-% ....
-%
-%
-%
+handles.h2num = [];
+handles.h2width = [];
+handles.h2bkgdcnt = [];
+handles.h2bkgd = [];
+handles.h2cal = [];
+handles.h2ignore = [];
+handles.h2data = [];
+handles.h2X = [];
+handles.h2Y = [];
+handles.h2T = [];
 
 % Clear file
 set(handles.h2file, 'String', '');
@@ -320,7 +326,7 @@ if isfield(handles, 'h3data') && ~isempty(handles.h3data) > 0
     handles = UpdateStatistics(handles, 'h3');
 
     % Update plot to show gamma
-    set(handles.h1display, 'Value', 1);
+    set(handles.h3display, 'Value', 3);
     handles = UpdateDisplay(handles, 'h3');
 end
 
@@ -359,13 +365,16 @@ function h3clear_Callback(hObject, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Clear data
-%
-%
-%
-% ....
-%
-%
-%
+handles.h3num = [];
+handles.h3width = [];
+handles.h3bkgdcnt = [];
+handles.h3bkgd = [];
+handles.h3cal = [];
+handles.h3ignore = [];
+handles.h3data = [];
+handles.h3X = [];
+handles.h3Y = [];
+handles.h3T = [];
 
 % Clear file
 set(handles.h3file, 'String', '');
