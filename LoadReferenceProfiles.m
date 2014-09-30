@@ -41,3 +41,7 @@ refY(1,:) = meshX(1,:);
 refY(2,:) = interp2(meshX, meshY, single(data), zeros(1,size(refY,2)), ...
     refY(1,:), '*linear', 0);
 
+% Normalize return variables
+refX(2,:) = refX(2,:) / max(refX(2,:));
+refY(2,:) = refY(2,:) / max(refY(2,:));
+data = data / max(max(data));

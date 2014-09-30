@@ -34,7 +34,7 @@ if isfield(handles, [head, 'data'])
         ([1:(handles.([head,'num'])(2)-1)/2, ...
         (handles.([head,'num'])(2)+3)/2, ...
         (handles.([head,'num'])(2)+7)/2:handles.([head,'num'])(2)+2] - ...
-        (handles.([head,'num'])(2)+3)/2) * -handles.([head,'width']);
+        (handles.([head,'num'])(2)+3)/2) * -handles.([head,'width']) * 10;
     
     % Set MLC Y data to corrected IC Profiler X detector data, using
     % leakage and correction factors
@@ -45,19 +45,223 @@ if isfield(handles, [head, 'data'])
         handles.([head,'bkgd'])(1:handles.([head,'num'])(2))) .* ...
         handles.([head,'cal'])(1:handles.([head,'num'])(2));
     
+    % Interpolate ignored channels
+    for i = 2:size(handles.([head,'Y']),2) - 1
+        % If the ignore flag is set
+        if handles.([head,'ignore'])(i) == 1
+            % Interpolate linearly from neighboring values
+            handles.([head,'Y'])(2,i) = (handles.([head,'Y'])(2,i-1) + ...
+                handles.([head,'Y'])(2,i+1)) / 2;
+        end
+    end
+    
+    % Add missing channels (to make spacing uniform)
+    for i = 2:size(handles.([head,'Y']),2) - 1
+        % If the spacing differs
+        if (handles.([head,'Y'])(1,i+1) - handles.([head,'Y'])(1,i)) < ...
+                (handles.([head,'Y'])(1,i) - handles.([head,'Y'])(1,i-1))
+            handles.([head,'Y']) = cat(2, handles.([head,'Y'])(:,1:i), ...
+                (handles.([head,'Y'])(:,i) + handles.([head,'Y'])(:,i+1))/2, ...
+                handles.([head,'Y'])(:,i+1:size(handles.([head,'Y']),2)));
+        end
+    end
+    
+    % Determine location and value of maximum in reference data
+    [C, I] = max(handles.refY(2,:));
+    
+    % Search left side for half-maximum value
+    for j = 1:I-1
+        if handles.refY(2,j) == C/2
+            l = handles.refY(2,j);
+            break;
+        elseif handles.refY(2,j) < C/2 && handles.refY(2,j+1) > C/2
+            l = interp1(handles.refY(2,j:j+1), ...
+                handles.refY(1,j:j+1), C/2, 'linear');
+            break;
+        end
+    end
+    
+    % Search right side for half-maximum value
+    for j = I:size(handles.refY,2)-1
+        if handles.refY(2,j) == C/2
+            r = handles.refY(2,j);
+            break;
+        elseif handles.refY(2,j) > C/2 && handles.refY(2,j+1) < C/2
+            r = interp1(handles.refY(2,j:j+1), ...
+                handles.refY(1,j:j+1), C/2, 'linear');
+            break;
+        end
+    end   
+    
+    % Compute reference center
+    refCenter = (r + l) / 2;
+    
+    % Determine location and value of maximum in measured data
+    [C, I] = max(handles.([head,'Y'])(2,:));
+    
+    % Search left side for half-maximum value
+    for j = 1:I-1
+        if handles.([head,'Y'])(2,j) == C/2
+            l = handles.([head,'Y'])(2,j);
+            break;
+        elseif handles.([head,'Y'])(2,j) < C/2 && ...
+                handles.([head,'Y'])(2,j+1) > C/2
+            l = interp1(handles.([head,'Y'])(2,j:j+1), ...
+                handles.([head,'Y'])(1,j:j+1), C/2, 'linear');
+            break;
+        end
+    end
+    
+    % Search right side for half-maximum value
+    for j = I:size(handles.([head,'Y']),2)-1
+        if handles.([head,'Y'])(2,j) == C/2
+            r = handles.([head,'Y'])(2,j);
+            break;
+        elseif handles.([head,'Y'])(2,j) > C/2 && ...
+                handles.([head,'Y'])(2,j+1) < C/2
+            r = interp1(handles.([head,'Y'])(2,j:j+1), ...
+                handles.([head,'Y'])(1,j:j+1), C/2, 'linear');
+            break;
+        end
+    end   
+    
+    % Offset measured data to center on reference
+    handles.([head,'Y'])(1,:) = handles.([head,'Y'])(1,:) ...
+        - (r + l) / 2 + refCenter;
+    
+    % Normalize measured data
+    handles.([head,'Y'])(2,:) = handles.([head,'Y'])(2,:) / ...
+        max(handles.([head,'Y'])(2,:));
+    
     % Prepare CalcGamma inputs (which uses start/width/data format)
     target.start = handles.([head,'Y'])(1,1);
-    target.width = handles.([head,'width']);
+    target.width = -handles.([head,'width']) * 10;
     target.data = squeeze(handles.([head,'Y'])(2,:));
     
     reference.start = handles.refY(1,1);
     reference.width = handles.refY(1,2) - handles.refY(1,1);
     reference.data = squeeze(handles.refY(2,:));
     
-    % Calculate 1-D gamma
-    handles.([head,'Y'])(3,1:handles.([head,'num'])(2)) = ...
-        CalcGamma(reference);
+    % Calculate 1-D GLOBAL gamma
+    handles.([head,'Y'])(3,1:size(handles.([head,'Y']),2)) = ...
+        CalcGamma(reference, target, handles.abs, handles.dta, 1);
     
     % Clear temporary variables
     clear target reference;
+    
+    %% Parse MLC X values
+    % Initialize data array
+    handles.([head,'X']) = zeros(3, handles.([head,'num'])(1));
+    
+    % Set MLC X locations to IC Profiler Y detector locations.
+    handles.([head,'X'])(1,1:handles.([head,'num'])(1)) = ...
+        ((1:handles.([head,'num'])(1)) - (handles.([head,'num'])(1)+1)/2) ...
+        * handles.([head,'width']) * 10;
+    
+    % Set MLC X data to corrected IC Profiler Y detector data, using
+    % leakage and correction factors
+    handles.([head,'X'])(2,1:handles.([head,'num'])(1)) = ...
+        (handles.([head,'data'])(size(handles.([head,'data']),1), ...
+        5 + handles.([head,'num'])(2) + (1:handles.([head,'num'])(1))) - ...
+        handles.([head,'data'])(size(handles.([head,'data']),1), 3) * ...
+        handles.([head,'bkgd'])(1 + handles.([head,'num'])(2):...
+        handles.([head,'num'])(2) + handles.([head,'num'])(1))) .* ...
+        handles.([head,'cal'])(1 + handles.([head,'num'])(2):...
+        handles.([head,'num'])(2) + handles.([head,'num'])(1));
+    
+    % Interpolate ignored channels
+    for i = 2:size(handles.([head,'X']),2) - 1
+        % If the ignore flag is set
+        if handles.([head,'ignore'])(i) == 1
+            % Interpolate linearly from neighboring values
+            handles.([head,'X'])(2,i) = (handles.([head,'X'])(2,i-1) + ...
+                handles.([head,'X'])(2,i+1)) / 2;
+        end
+    end
+    
+    % Determine location and value of maximum in reference data
+    [C, I] = max(handles.refX(2,:));
+    
+    % Search left side for half-maximum value
+    for j = 1:I-1
+        if handles.refX(2,j) == C/2
+            l = handles.refX(2,j);
+            break;
+        elseif handles.refX(2,j) < C/2 && handles.refX(2,j+1) > C/2
+            l = interp1(handles.refX(2,j:j+1), ...
+                handles.refX(1,j:j+1), C/2, 'linear');
+            break;
+        end
+    end
+    
+    % Search right side for half-maximum value
+    for j = I:size(handles.refX,2)-1
+        if handles.refX(2,j) == C/2
+            r = handles.refX(2,j);
+            break;
+        elseif handles.refX(2,j) > C/2 && handles.refX(2,j+1) < C/2
+            r = interp1(handles.refX(2,j:j+1), ...
+                handles.refX(1,j:j+1), C/2, 'linear');
+            break;
+        end
+    end   
+    
+    % Compute reference center
+    refCenter = (r + l) / 2;
+    
+    % Determine location and value of maximum in measured data
+    [C, I] = max(handles.([head,'X'])(2,:));
+    
+    % Search left side for half-maximum value
+    for j = 1:I-1
+        if handles.([head,'X'])(2,j) == C/2
+            l = handles.([head,'X'])(2,j);
+            break;
+        elseif handles.([head,'X'])(2,j) < C/2 && ...
+                handles.([head,'X'])(2,j+1) > C/2
+            l = interp1(handles.([head,'X'])(2,j:j+1), ...
+                handles.([head,'X'])(1,j:j+1), C/2, 'linear');
+            break;
+        end
+    end
+    
+    % Search right side for half-maximum value
+    for j = I:size(handles.([head,'X']),2)-1
+        if handles.([head,'X'])(2,j) == C/2
+            r = handles.([head,'X'])(2,j);
+            break;
+        elseif handles.([head,'X'])(2,j) > C/2 && ...
+                handles.([head,'X'])(2,j+1) < C/2
+            r = interp1(handles.([head,'X'])(2,j:j+1), ...
+                handles.([head,'X'])(1,j:j+1), C/2, 'linear');
+            break;
+        end
+    end   
+    
+    % Offset measured data to center on reference
+    handles.([head,'X'])(1,:) = handles.([head,'X'])(1,:) ...
+        - (r + l) / 2 + refCenter;
+    
+    % Normalize measured data
+    handles.([head,'X'])(2,:) = handles.([head,'X'])(2,:) / ...
+        max(handles.([head,'X'])(2,:));
+    
+    % Prepare CalcGamma inputs (which uses start/width/data format)
+    target.start = handles.([head,'X'])(1,1);
+    target.width = handles.([head,'width']) * 10;
+    target.data = squeeze(handles.([head,'X'])(2,:));
+    
+    reference.start = handles.refX(1,1);
+    reference.width = handles.refX(1,2) - handles.refX(1,1);
+    reference.data = squeeze(handles.refX(2,:));
+    
+    % Calculate 1-D GLOBAL gamma
+    handles.([head,'X'])(3,1:size(handles.([head,'X']),2)) = ...
+        CalcGamma(reference, target, handles.abs, handles.dta, 1);
+    
+    % Clear temporary variables
+    clear target reference;
+    
+    %% Parse Timing profile
+    
 end

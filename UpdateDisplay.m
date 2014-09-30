@@ -60,35 +60,96 @@ set(handles.([head, 'axes']), 'visible', 'off');
 
 % Execute code block based on display GUI item value
 switch get(handles.([head, 'display']),'Value')
+    %% Plot reference dose array
     case 2
         % If data exists
         if isfield(handles, 'refData')
-            
+            % Plot transposed reference field
             imagesc(handles.refData');
             
+            % Calculate where the x labels should go in order to be
+            % uniformly spaced around zero
             xlabels = interp1(handles.refY(1,:), ...
                 1:length(handles.refY(1,:)), -200:50:200);
             
+            % Set x ticks and labels
             set(gca, 'XTick', xlabels);
             set(gca, 'XTickLabel', -200:50:200);
             
-            ylabels = interp1(handles.refY(1,:), ...
-                1:length(handles.refY(1,:)), -200:50:200);
+            % Calculate where the y labels should go in order to be
+            % uniformly spaced around zero
+            ylabels = interp1(handles.refX(1,:), ...
+                1:length(handles.refX(1,:)), -200:50:200);
             
+            % Set y ticks and labels
             set(gca, 'YTick', ylabels);
             set(gca, 'YTickLabel', -200:50:200);
             
+            % Turn on grid, color bar, and make image square
             grid on;
             colorbar;
             axis image;
         end
     
+    %% Plot MLC X data
     case 3
         % If data exists
         if isfield(handles, [head,'X']) && ...
-                size(handles.([head,'X']), 1) > 0
+                size(handles.([head,'X']), 2) > 0
             
+            % Enable plot hold to overlay multiple plots
+            hold on;
             
+            % Plot reference data
+            plot(handles.refX(1,:), handles.refX(2,:), 'blue');
+            
+            % Plot measured data
+            plot(handles.([head,'X'])(1,:), handles.([head,'X'])(2,:), 'red');
+            
+            % Plot gamma
+            plot(handles.([head,'X'])(1,:), handles.([head,'X'])(3,:), ...
+                'Color', [0 0.75 0.75]);
+            
+            % Format plot
+            hold off;
+            ylabel('Normalized Measurement');
+            ylim([0 1.05]);
+            xlabel('MLC X Position (mm)');
+            xlim([-160 160]);
+            grid on;
+            
+            % Turn on display
+            set(allchild(handles.([head, 'axes'])), 'visible', 'on'); 
+            set(handles.([head, 'axes']), 'visible', 'on'); 
+            zoom on;
+        end
+     
+    %% Plot MLC Y data   
+    case 4
+        % If data exists
+        if isfield(handles, [head,'Y']) && ...
+                size(handles.([head,'Y']), 2) > 0
+            
+            % Enable plot hold to overlay multiple plots
+            hold on;
+            
+            % Plot reference data
+            plot(handles.refY(1,:), handles.refY(2,:), 'blue');
+            
+            % Plot measured data
+            plot(handles.([head,'Y'])(1,:), handles.([head,'Y'])(2,:), 'red');
+            
+            % Plot gamma
+            plot(handles.([head,'Y'])(1,:), handles.([head,'Y'])(3,:), ...
+                'Color', [0 0.75 0.75]);
+            
+            % Format plot
+            hold off;
+            ylabel('Normalized Measurement');
+            ylim([0 1.05]);
+            xlabel('MLC Y Position (mm)');
+            xlim([-160 160]);
+            grid on;
             
             % Turn on display
             set(allchild(handles.([head, 'axes'])), 'visible', 'on'); 
