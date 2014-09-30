@@ -263,5 +263,27 @@ if isfield(handles, [head, 'data'])
     clear target reference;
     
     %% Parse Timing profile
+    % Initialize data array
+    handles.([head,'T']) = zeros(2, size(handles.([head,'data']),1));
     
+    % Store time tics (in seconds)
+    handles.([head,'T'])(1,:) = handles.([head,'data'])(:,3)/1000000;
+    
+    % Store center IC Profiler Y detector response
+    handles.([head,'T'])(2,:) = handles.([head,'data'])(:,5 + ...
+        handles.([head,'num'])(2) + (handles.([head,'num'])(1) + 1)/2);
+    
+    % Convert signal from integral to differential
+    handles.([head,'T'])(2,:) = handles.([head,'T'])(2,:) - ...
+        circshift(handles.([head,'T'])(2, :),1,2);
+    
+    % Divide signal by tics per packet and normalize
+    handles.([head,'T'])(2,:) = handles.([head,'T'])(2,:) ./ ...
+        (handles.([head,'T'])(1,:) - ...
+        circshift(handles.([head,'T'])(1, :),1,2));
+    
+    % Fix first value (artifact of using circshift)
+    handles.([head,'T'])(2,1) = handles.([head,'data'])(1,5 + ...
+        handles.([head,'num'])(2) + (handles.([head,'num'])(1) + 1)/2) / ...
+        handles.([head,'data'])(1,3) * 1000000;
 end

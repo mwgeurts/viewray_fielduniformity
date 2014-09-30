@@ -157,6 +157,25 @@ switch get(handles.([head, 'display']),'Value')
             zoom on;
         end
     
+    %% Plot time profile
+    case 5
+        % If data exists
+        if isfield(handles, [head,'T']) && ...
+                size(handles.([head,'T']), 2) > 0
+            
+            % Plot reference data
+            plot(handles.([head,'T'])(1,:), handles.([head,'T'])(2,:), 'blue');
+            
+            % Format plot
+            ylabel('Detector Signal (counts/sec)');
+            xlabel('Time (sec)');
+            grid on;
+            
+            % Turn on display
+            set(allchild(handles.([head, 'axes'])), 'visible', 'on'); 
+            set(handles.([head, 'axes']), 'visible', 'on'); 
+            zoom on;
+        end
 end
 
 % Return the modified handles

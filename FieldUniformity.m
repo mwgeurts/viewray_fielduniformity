@@ -70,9 +70,9 @@ set(handles.h3table, 'Data', cell(4,2));
 
 % Initialize global variables
 handles.path = userpath;
-handles.time = 60; % seconds (expected)
-handles.abs = 3.0; % percent
-handles.dta = 3.0; % mm
+handles.time = 30; % seconds (expected)
+handles.abs = 2.0; % percent
+handles.dta = 1.0; % mm
 
 % Load reference profiles
 [handles.refX, handles.refY, handles.refData] = ...
@@ -125,7 +125,7 @@ if isfield(handles, 'h1data') && ~isempty(handles.h1data) > 0
     handles = ParseSNCProfiles(handles, 'h1');
     
     % Update statistics table
-    %handles = UpdateStatistics(handles, 'h1');
+    handles = UpdateStatistics(handles, 'h1');
 
     % Update plot to show MLC X profiles
     set(handles.h1display, 'Value', 3);
