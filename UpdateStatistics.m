@@ -23,6 +23,10 @@ function handles = UpdateStatistics(handles, head)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
+% Log start
+Event(['Updating ', head, 'table statistics']);
+tic;
+
 % Load table data cell array
 table = get(handles.([head, 'table']), 'Data');
 
@@ -32,9 +36,11 @@ c = 0;
 % Set time signal packet buffer (number of channels from edge that the SNR
 % is measured)
 b = 5;
+Event(sprintf('Time signal packet buffer set to %i', b));
 
 % Set area interpolation factor (for computing area under field)
 a = 10000;
+Event(sprintf('Area interpolation factor set to %i', a));
 
 % Gamma parameters
 c = c + 1;
@@ -50,6 +56,7 @@ table{c,2} = sprintf('%0.2f sec', handles.time);
 c = c + 1;
 table{c,1} = 'Measured beam on time';
 if isfield(handles, [head,'T']) && size(handles.([head,'T']), 2) > 0
+    
     % Determine location and value of maximum in time signal
     [C, I] = max(handles.([head,'T'])(2,:));
     
@@ -81,6 +88,8 @@ if isfield(handles, [head,'T']) && size(handles.([head,'T']), 2) > 0
     
     % Report FWHM of time signal
     table{c,2} = sprintf('%0.2f sec', r-l);
+    Event(sprintf(['Beam on time edges identified at %0.3f and ', ...
+        '%0.3f seconds'], [l r]));
 end
 
 % Measured time
@@ -94,6 +103,14 @@ end
 c = c + 1;
 table{c,1} = 'Signal SNR';
 if isfield(handles, [head,'T']) && size(handles.([head,'T']), 2) > 0
+    
+    % Log ranges
+    Event(sprintf('SNR signal averaged over packets %i:%i', ...
+        [ceil(l)+b floor(r)-b]));
+    Event(sprintf('SNR variance measured over packets %i:%i', ...
+        [1 floor(l)-b]));
+    
+    % Compute dB
     table{c,2} = sprintf('%0.2f dB', 20 * ...
         log10(mean(handles.([head,'T'])(2,ceil(l)+b:floor(r)-b)) / ...
         sqrt(sum(var(handles.([head,'T'])(2,1:floor(l)-b))/(floor(l)-b)))));
@@ -103,6 +120,7 @@ end
 c = c + 1;
 table{c,1} = 'Reference MLC X FWHM';
 if isfield(handles, 'refX') && size(handles.refX, 2) > 0
+    
     % Determine location and value of maximum in X signal
     [C, I] = max(handles.refX(2,:));
     
@@ -135,12 +153,14 @@ if isfield(handles, 'refX') && size(handles.refX, 2) > 0
     % Report FWHM
     refXFWHM = r-l;
     table{c,2} = sprintf('%0.2f mm', refXFWHM);
+    Event(sprintf('RefX FWHM edges identified at %0.3f and %0.3f mm', [l r]));
 end
 
 % MLC X FWHM
 c = c + 1;
 table{c,1} = 'Measured MLC X FWHM';
 if isfield(handles, [head,'X']) && size(handles.([head,'X']), 2) > 0
+    
     % Determine location and value of maximum in X signal
     [C, I] = max(handles.([head,'X'])(2,:));
     
@@ -176,6 +196,8 @@ if isfield(handles, [head,'X']) && size(handles.([head,'X']), 2) > 0
     
     % Report FWHM
     table{c,2} = sprintf('%0.2f mm', r-l);
+    Event(sprintf(['Measured MLC X FWHM edges identified at %0.3f ', ...
+        'and %0.3f mm'], [l r]));
 end
 
 % MLC X FWHM Difference
@@ -189,8 +211,18 @@ end
 c = c + 1;
 table{c,1} = 'MLC X flatness (central 80%)';
 if isfield(handles, [head,'X']) && size(handles.([head,'X']), 2) > 0
-    dmax = max(handles.([head,'X'])(2,ceil(li+(ri-li)*0.1):floor(ri-(ri-li)*0.1)));
-    dmin = min(handles.([head,'X'])(2,ceil(li+(ri-li)*0.1):floor(ri-(ri-li)*0.1)));
+    
+    % Find max
+    [dmax, I] = max(handles.([head,'X'])(2, ...
+        ceil(li+(ri-li)*0.1):floor(ri-(ri-li)*0.1)));
+    Event(sprintf('MLC X flatness max value %0.3f found at %0.1f mm', ...
+        dmax, handles.([head,'X'])(1,I(1))));
+    
+    % Find min
+    [dmin, I] = min(handles.([head,'X'])(2, ...
+        ceil(li+(ri-li)*0.1):floor(ri-(ri-li)*0.1)));
+    Event(sprintf('MLC X flatness min value %0.3f found at %0.1f mm', ...
+        dmin, handles.([head,'X'])(1,I(1))));
     
     table{c,2} = sprintf('%0.2f%%', (dmax-dmin)/(dmax+dmin) * 100);
 end
@@ -199,12 +231,17 @@ end
 c = c + 1;
 table{c,1} = 'MLC X areal symmetry (central 80%)';
 if isfield(handles, [head,'X']) && size(handles.([head,'X']), 2) > 0
+    % Compute left area
     aleft = interp1(handles.([head,'X'])(1,:), ...
         handles.([head,'X'])(2,:), l+(r-l)*0.1:...
         ((l+r)/2-(l+(r-l)*0.1))/a:(l+r)/2);
+    Event(sprintf('MLC X areal symmetry left area computed as %g', sum(aleft)));
+    
+    % Compute right area
     aright = interp1(handles.([head,'X'])(1,:), ...
         handles.([head,'X'])(2,:), (l+r)/2:...
         ((r-(r-l)*0.1)-(l+r)/2)/a:r-(r-l)*0.1);
+    Event(sprintf('MLC X areal symmetry right area computed as %g', sum(aright)));
     
     table{c,2} = sprintf('%0.2f%%', (sum(aright)-sum(aleft)) / ...
         (sum(aright)+sum(aleft)) * 200);
@@ -222,14 +259,21 @@ end
 c = c + 1;
 table{c,1} = 'MLC X max gamma (central 50%)';
 if isfield(handles, [head,'X']) && size(handles.([head,'X']), 2) > 0
+    
+    % Find maximum
+    [m, I] = max(handles.([head,'X'])(3,li:ri));
+    Event(sprintf('MLC X maximum gamma found at %0.3f mm', ...
+        handles.([head,'X'])(1,I(1))));
+    
     % Report max gamma
-    table{c,2} = sprintf('%0.2f', max(handles.([head,'X'])(3,li:ri)));
+    table{c,2} = sprintf('%0.2f', m);
 end
 
 % Reference Y FWHM
 c = c + 1;
 table{c,1} = 'Reference MLC Y FWHM';
 if isfield(handles, 'refY') && size(handles.refY, 2) > 0
+    
     % Determine location and value of maximum in Y signal
     [C, I] = max(handles.refY(2,:));
     
@@ -262,12 +306,14 @@ if isfield(handles, 'refY') && size(handles.refY, 2) > 0
     % Report FWHM
     refYFWHM = r-l;
     table{c,2} = sprintf('%0.2f mm', refYFWHM);
+    Event(sprintf('RefY FWHM edges identified at %0.3f and %0.3f mm', [l r]));
 end
 
 % MLC Y FWHM
 c = c + 1;
 table{c,1} = 'Measured MLC Y FWHM';
 if isfield(handles, [head,'Y']) && size(handles.([head,'Y']), 2) > 0
+    
     % Determine location and value of maximum in Y signal
     [C, I] = max(handles.([head,'Y'])(2,:));
     
@@ -302,22 +348,34 @@ if isfield(handles, [head,'Y']) && size(handles.([head,'Y']), 2) > 0
     end
     
     % Report FWHM
-    table{c,2} = sprintf('%0.2f mm', abs(r-l));
+    table{c,2} = sprintf('%0.2f mm', r-l);
+    Event(sprintf(['Measured MLC Y FWHM edges identified at %0.3f ', ...
+        'and %0.3f mm'], [l r]));
 end
 
 % MLC Y FWHM Difference
 c = c + 1;
 table{c,1} = 'MLC Y FWHM difference';
 if isfield(handles, [head,'Y']) && size(handles.([head,'Y']), 2) > 0
-    table{c,2} = sprintf('%0.2f mm', abs(r-l) - refYFWHM);
+    table{c,2} = sprintf('%0.2f mm', r-l - refYFWHM);
 end
 
 % MLC Y Flatness
 c = c + 1;
 table{c,1} = 'MLC Y flatness (central 80%)';
 if isfield(handles, [head,'Y']) && size(handles.([head,'Y']), 2) > 0
-    dmax = max(handles.([head,'Y'])(2,ceil(li+(ri-li)*0.1):floor(ri-(ri-li)*0.1)));
-    dmin = min(handles.([head,'Y'])(2,ceil(li+(ri-li)*0.1):floor(ri-(ri-li)*0.1)));
+    
+    % Find max
+    [dmax, I] = max(handles.([head,'Y'])(2, ...
+        ceil(li+(ri-li)*0.1):floor(ri-(ri-li)*0.1)));
+    Event(sprintf('MLC Y flatness max value %0.3f found at %0.1f mm', ...
+        dmax, handles.([head,'Y'])(1,I(1))));
+    
+    % Find min
+    [dmin, I] = min(handles.([head,'Y'])(2, ...
+        ceil(li+(ri-li)*0.1):floor(ri-(ri-li)*0.1)));
+    Event(sprintf('MLC Y flatness min value %0.3f found at %0.1f mm', ...
+        dmin, handles.([head,'Y'])(1,I(1))));
     
     table{c,2} = sprintf('%0.2f%%', (dmax-dmin)/(dmax+dmin) * 100);
 end
@@ -326,12 +384,17 @@ end
 c = c + 1;
 table{c,1} = 'MLC Y areal symmetry (central 80%)';
 if isfield(handles, [head,'Y']) && size(handles.([head,'Y']), 2) > 0
+    % Compute left area
     aleft = interp1(handles.([head,'Y'])(1,:), ...
         handles.([head,'Y'])(2,:), l+(r-l)*0.1:...
         ((l+r)/2-(l+(r-l)*0.1))/a:(l+r)/2);
+    Event(sprintf('MLC Y areal symmetry left area computed as %g', sum(aleft)));
+    
+    % Compute right area
     aright = interp1(handles.([head,'Y'])(1,:), ...
         handles.([head,'Y'])(2,:), (l+r)/2:...
         ((r-(r-l)*0.1)-(l+r)/2)/a:r-(r-l)*0.1);
+    Event(sprintf('MLC Y areal symmetry right area computed as %g', sum(aright)));
     
     table{c,2} = sprintf('%0.2f%%', (sum(aright)-sum(aleft)) / ...
         (sum(aright)+sum(aleft)) * 200);
@@ -349,9 +412,18 @@ end
 c = c + 1;
 table{c,1} = 'MLC Y max gamma (central 50%)';
 if isfield(handles, [head,'Y']) && size(handles.([head,'Y']), 2) > 0
+    
+    % Find maximum
+    [m, I] = max(handles.([head,'Y'])(3,li:ri));
+    Event(sprintf('MLC Y maximum gamma found at %0.3f mm', ...
+        handles.([head,'Y'])(1,I(1))));
+    
     % Report max gamma
-    table{c,2} = sprintf('%0.2f', max(handles.([head,'Y'])(3,li:ri)));
+    table{c,2} = sprintf('%0.2f', m);
 end
     
 % Set table data
 set(handles.([head, 'table']), 'Data', table);
+
+% Log completion
+Event(sprintf('Statistics table updated successfully in %0.3f seconds', toc));

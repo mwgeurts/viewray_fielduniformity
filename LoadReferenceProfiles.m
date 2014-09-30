@@ -21,6 +21,10 @@ function [refX, refY, data] = LoadReferenceProfiles(file)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
+% Log start
+Event(['Loading reference dataset ', file]);
+tic;
+
 % Load DICOM data
 info = dicominfo(file);
 width = info.PixelSpacing;
@@ -45,3 +49,7 @@ refY(2,:) = interp2(meshX, meshY, single(data), zeros(1,size(refY,2)), ...
 refX(2,:) = refX(2,:) / max(refX(2,:));
 refY(2,:) = refY(2,:) / max(refY(2,:));
 data = data / max(max(data));
+Event('Reference profiles normalized to 1');
+
+% Log completion
+Event(sprintf('Reference dataset successfully loaded in %0.3f seconds', toc));

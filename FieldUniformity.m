@@ -49,6 +49,27 @@ function FieldUniformity_OpeningFcn(hObject, ~, handles, varargin)
 % Choose default command line output for FieldUniformity
 handles.output = hObject;
 
+% Set version information.  See LoadVersionInfo for more details.
+handles.versionInfo = LoadVersionInfo;
+
+% Store program and MATLAB/etc version information as a string cell array
+string = {'ViewRay Field Uniformity/Timing Check'
+    sprintf('Version: %s', handles.versionInfo{6});
+    sprintf('Author: Mark Geurts <mark.w.geurts@gmail.com>');
+    sprintf('MATLAB Version: %s', handles.versionInfo{2});
+    sprintf('MATLAB License Number: %s', handles.versionInfo{3});
+    sprintf('Operating System: %s', handles.versionInfo{1});
+    sprintf('CUDA: %s', handles.versionInfo{4});
+    sprintf('Java Version: %s', handles.versionInfo{5})
+};
+
+% Add dashed line separators      
+separator = repmat('-', 1,  size(char(string), 2));
+string = sprintf('%s\n', separator, string{:}, separator);
+
+% Log information
+Event(string, 'INIT');
+
 % Turn off images
 set(allchild(handles.h1axes), 'visible', 'off'); 
 set(handles.h1axes, 'visible', 'off'); 
@@ -70,9 +91,15 @@ set(handles.h3table, 'Data', cell(4,2));
 
 % Initialize global variables
 handles.path = userpath;
+Event(['Default file path set to ', handles.path]);
+
 handles.time = 30; % seconds (expected)
+Event(sprintf('Expected time set to %0.1f seconds', handles.time));
+
 handles.abs = 2.0; % percent
 handles.dta = 1.0; % mm
+Event(sprintf('Gamma criteria set to %0.1f%%/%0.1f mm', ...
+    [handles.abs handles.dta]));
 
 % Load reference profiles
 [handles.refX, handles.refY, handles.refData] = ...
@@ -116,6 +143,10 @@ function h1browse_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Log event
+Event('H1 browse button selected');
+t = tic;
+
 % Load profile data
 handles = LoadSNCprm(handles, 'h1');
 
@@ -130,6 +161,10 @@ if isfield(handles, 'h1data') && ~isempty(handles.h1data) > 0
     % Update plot to show MLC X profiles
     set(handles.h1display, 'Value', 3);
     handles = UpdateDisplay(handles, 'h1');
+    
+    % Log event
+    Event(sprintf('H1 data loaded successfully in %0.3f seconds', toc(t)));
+    clear t;
 end
 
 % Update handles structure
@@ -140,6 +175,9 @@ function h1display_Callback(hObject, ~, handles)
 % hObject    handle to h1display (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+% Log event
+Event('H1 display dropdown changed');
 
 % Call UpdateDisplay to update plot
 handles = UpdateDisplay(handles, 'h1');
@@ -166,6 +204,9 @@ function h1clear_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Log event
+Event('H1 clear all button selected');
+
 % Clear data
 handles.h1num = [];
 handles.h1width = [];
@@ -186,6 +227,9 @@ handles = UpdateDisplay(handles, 'h1');
 
 % Clear statistics table
 set(handles.h1table, 'Data', cell(4,2));
+
+% Log event
+Event('H1 data cleared from memory');
 
 % Update handles structure
 guidata(hObject, handles);
@@ -215,6 +259,10 @@ function h2browse_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Log event
+Event('H2 browse button selected');
+t = tic;
+
 % Load profile data
 handles = LoadSNCprm(handles, 'h2');
 
@@ -229,6 +277,10 @@ if isfield(handles, 'h2data') && ~isempty(handles.h2data) > 0
     % Update plot to show gamma
     set(handles.h2display, 'Value', 3);
     handles = UpdateDisplay(handles, 'h2');
+    
+    % Log event
+    Event(sprintf('H2 data loaded successfully in %0.3f seconds', toc(t)));
+    clear t;
 end
 
 % Update handles structure
@@ -239,6 +291,9 @@ function h2display_Callback(hObject, ~, handles)
 % hObject    handle to h2display (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+% Log event
+Event('H2 display dropdown changed');
 
 % Call UpdateDisplay to update plot
 handles = UpdateDisplay(handles, 'h2');
@@ -265,6 +320,9 @@ function h2clear_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Log event
+Event('H2 clear all button selected');
+
 % Clear data
 handles.h2num = [];
 handles.h2width = [];
@@ -285,6 +343,9 @@ handles = UpdateDisplay(handles, 'h2');
 
 % Clear statistics table
 set(handles.h2table, 'Data', cell(4,2));
+
+% Log event
+Event('H2 data cleared from memory');
 
 % Update handles structure
 guidata(hObject, handles);
@@ -314,6 +375,10 @@ function h3browse_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Log event
+Event('H3 browse button selected');
+t = tic;
+
 % Load profile data
 handles = LoadSNCprm(handles, 'h3');
 
@@ -328,6 +393,10 @@ if isfield(handles, 'h3data') && ~isempty(handles.h3data) > 0
     % Update plot to show gamma
     set(handles.h3display, 'Value', 3);
     handles = UpdateDisplay(handles, 'h3');
+    
+    % Log event
+    Event(sprintf('H1 data loaded successfully in %0.3f seconds', toc(t)));
+    clear t;
 end
 
 % Update handles structure
@@ -338,6 +407,9 @@ function h3display_Callback(hObject, ~, handles)
 % hObject    handle to h3display (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+% Log event
+Event('H3 display dropdown changed');
 
 % Call UpdateDisplay to update plot
 handles = UpdateDisplay(handles, 'h3');
@@ -364,6 +436,9 @@ function h3clear_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Log event
+Event('H3 clear all button selected');
+
 % Clear data
 handles.h3num = [];
 handles.h3width = [];
@@ -384,6 +459,9 @@ handles = UpdateDisplay(handles, 'h3');
 
 % Clear statistics table
 set(handles.h3table, 'Data', cell(4,2));
+
+% Log event
+Event('H3 data cleared from memory');
 
 % Update handles structure
 guidata(hObject, handles);

@@ -34,6 +34,7 @@ plotoptions = {
 
 % If no input arguments are provided
 if nargin == 0
+    
     % Return the plot options
     varargout{1} = plotoptions;
     
@@ -42,17 +43,24 @@ if nargin == 0
     
 % Otherwise, if 2, set the input variables and update the plot
 elseif nargin == 2
+    
+    % Set input variables
     handles = varargin{1};
     head = varargin{2};
-
+    
+    % Log start
+    Event('Updating plot display');
+    tic;
+    
 % Otherwise, throw an error
 else 
-    error('Incorrect number of inputs');
+    Event('Incorrect number of inputs to UpdateDisplay', 'ERROR');
 end
 
 % Clear and set reference to axis
 cla(handles.([head, 'axes']), 'reset');
 axes(handles.([head, 'axes']));
+Event(['Current plot set to ', head, 'axes']);
 
 % Turn off the display while building
 set(allchild(handles.([head, 'axes'])), 'visible', 'off'); 
@@ -60,8 +68,12 @@ set(handles.([head, 'axes']), 'visible', 'off');
 
 % Execute code block based on display GUI item value
 switch get(handles.([head, 'display']),'Value')
+    
     %% Plot reference dose array
     case 2
+        % Log selection
+        Event('Reference Profile selected for display');
+        
         % If data exists
         if isfield(handles, 'refData')
             % Plot transposed reference field
@@ -93,6 +105,9 @@ switch get(handles.([head, 'display']),'Value')
     
     %% Plot MLC X data
     case 3
+        % Log selection
+        Event('MLC X Profile selected for display');
+        
         % If data exists
         if isfield(handles, [head,'X']) && ...
                 size(handles.([head,'X']), 2) > 0
@@ -126,6 +141,9 @@ switch get(handles.([head, 'display']),'Value')
      
     %% Plot MLC Y data   
     case 4
+        % Log selection
+        Event('MLC Y Profile selected for display');
+        
         % If data exists
         if isfield(handles, [head,'Y']) && ...
                 size(handles.([head,'Y']), 2) > 0
@@ -159,6 +177,9 @@ switch get(handles.([head, 'display']),'Value')
     
     %% Plot time profile
     case 5
+        % Log selection
+        Event('Timing Profile selected for display');
+        
         % If data exists
         if isfield(handles, [head,'T']) && ...
                 size(handles.([head,'T']), 2) > 0
@@ -177,6 +198,9 @@ switch get(handles.([head, 'display']),'Value')
             zoom on;
         end
 end
+
+% Log completion
+Event(sprintf('Plot updated successfully in %0.3f seconds', toc));
 
 % Return the modified handles
 varargout{1} = handles; 

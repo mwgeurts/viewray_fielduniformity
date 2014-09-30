@@ -1,16 +1,16 @@
 function gamma = CalcGamma(varargin)
 % CalcGamma computes 1-D, 2-D, or 3-D global or absolute gamma between two
-% datasets (reference and target) given a defined coordinate space.  The 
+% datasets (reference and target) given a defined coordinate space. The 
 % datasets must have the same number of dimensions, although they can be 
-% different sizes.  Gamma will be computed for each target dose point by
+% different sizes. Gamma will be computed for each target dose point by
 % shifting the reference image (using linear interpolation) and determining
 % the minimum Gamma index across all shifts.
 %
 % This function optionally uses the Parallel Computing Toolbox GPU interp
-% functions to increase computation speed.  A try-catch statement is used
-% to test for GPU support.  In addition, for memory management, the
+% functions to increase computation speed. A try-catch statement is used
+% to test for GPU support. In addition, for memory management, the
 % meshgrid and data arrays are converted to single precision during
-% interpolation.
+% interpolation. This function calls Event.m to log results.
 %
 % For more information on the Gamma evaluation function, see D. A. Low et 
 % al., "A technique for the quantitative evaluation of dose distributions", 
@@ -71,6 +71,10 @@ function gamma = CalcGamma(varargin)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
+% Log initialization and start timer
+Event('Beginning Gamma calculation');
+tic;
+
 % Check if the reference structure contains width, start, and data fields,
 % and if the size of the width and start vectors are equal
 if ~isfield(varargin{1}, 'width') || ~isfield(varargin{1}, 'start') || ...
@@ -78,8 +82,8 @@ if ~isfield(varargin{1}, 'width') || ~isfield(varargin{1}, 'start') || ...
         size(varargin{1}.start))
     
     % If not, throw an error and stop execution
-    error(['Incorrect reference data format.  Must contain width, start, ', ...
-        'and data fields and be of equal dimensions']);
+    Event(['Incorrect reference data format.  Must contain width, start, ', ...
+        'and data fields and be of equal dimensions'], 'ERROR');
     
 % Check if the target structure contains width, start, and data fields,
 % and if the size of the width and start vectors are equal
@@ -88,8 +92,8 @@ elseif ~isfield(varargin{2}, 'width') || ~isfield(varargin{2}, 'start') || ...
         size(varargin{2}.start))
     
     % If not, throw an error and stop execution
-    error(['Incorrect target data format.  Must contain width, start, ', ...
-        'and data fields and be of equal dimensions']);
+    Event(['Incorrect target data format.  Must contain width, start, ', ...
+        'and data fields and be of equal dimensions'], 'ERROR');
     
 % Check if the reference and target data arrays are the same number of
 % dimensions.  Calculating the gamma from a lower dimensional dataset to a
@@ -97,13 +101,22 @@ elseif ~isfield(varargin{2}, 'width') || ~isfield(varargin{2}, 'start') || ...
 elseif ~isequal(size(size(varargin{1}.data)), size(size(varargin{2}.data)))
     
     % If not, throw an error and stop execution
-    error('The fixed and target data arrays must be of the same dimensions');
+    Event('The fixed and target data arrays must be of the same dimensions', ...
+        'ERROR');
 end
+
+% Log validation completed
+Event('Data validation completed');
 
 % If a local/global Gamma flag was not provided
 if nargin < 4
     % Assume the computation is global
     varargin{5} = 0;
+    Event('Gamma calculation assumed to global');
+elseif varargin{5} == 0
+    Event('Gamma calculation set to global');
+else
+    Event('Gamma calculation set to local');  
 end
 
 % If a reference absolute value was not provided
@@ -111,10 +124,12 @@ if nargin < 6
     % Assume the reference value is the maximum value in the reference data
     % array (ie, Gamma % criterion is % of max value)
     varargin{6} = max(max(max(varargin{1}.data)));
+    Event('No reference value was provided, maximum value in dataset used');
 end
 
 % If the reference dataset is 1-D
 if size(varargin{1}.width,2) == 1
+    Event('Reference dataset is 1-D');
     
     % Check if the data is in rows or columns (this is only needed for 1-D)
     if size(varargin{1}.data,1) > size(varargin{1}.data,2)
@@ -129,6 +144,7 @@ if size(varargin{1}.width,2) == 1
     
 % Otherwise, if the reference dataset is 2-D
 elseif size(varargin{1}.width,2) == 2
+    Event('Reference dataset is 2-D');
     
     % Compute X and Y meshgrids for the reference dataset positions using 
     % the start and width values
@@ -140,6 +156,7 @@ elseif size(varargin{1}.width,2) == 2
     
 % Otherwise, if the reference dataset is 3-D
 elseif size(varargin{1}.width,2) == 3
+    Event('Reference dataset is 3-D');
     
     % Compute X, Y, and Z meshgrids for the reference dataset positions
     % using the start and width values
@@ -154,11 +171,12 @@ elseif size(varargin{1}.width,2) == 3
 % Otherwise, if the reference data is of higher dimension
 else
     % Throw an error and stop execution
-    error('The fixed data structure contains too many dimensions');
+    Event('The fixed data structure contains too many dimensions', 'ERROR');
 end
 
 % If the target dataset is 1-D
 if size(varargin{2}.width,2) == 1
+    Event('Target dataset is 1-D');
     
     % Check if the data is in rows or columns (this is only needed for 1-D)
     if size(varargin{2}.data,1) > size(varargin{2}.data,2)
@@ -173,6 +191,7 @@ if size(varargin{2}.width,2) == 1
     
 % Otherwise, if the target dataset is 2-D
 elseif size(varargin{2}.width,2) == 2
+    Event('Target dataset is 2-D');
     
     % Compute X and Y meshgrids for the target dataset positions using the
     % start and width values
@@ -184,6 +203,7 @@ elseif size(varargin{2}.width,2) == 2
     
 % Otherwise, if the target dataset is 3-D
 elseif size(varargin{2}.width,2) == 3
+    Event('Target dataset is 3-D');
     
     % Compute X, Y, and Z meshgrids for the target dataset positions using
     % the start and width values
@@ -198,7 +218,7 @@ elseif size(varargin{2}.width,2) == 3
 % Otherwise, if the reference data is of higher dimension
 else
     % Throw an error and stop execution
-    error('The target data structure contains too many dimensions');
+    Event('The target data structure contains too many dimensions', 'ERROR');
 end
 
 % The resolution parameter determines the number of steps (relative to 
@@ -214,12 +234,19 @@ elseif size(varargin{2}.width,2) == 2
     res = 20;
 elseif size(varargin{2}.width,2) == 3
     % Set 3-D resolution
-    res = 10;
+    res = 5;
 end
+
+% Log resolution
+Event(sprintf('Interpolation resolution set to %i', res));
 
 % Generate an initial gamma volume with values of 2 (this is the maximum
 % reliable value of gamma).
 gamma = ones(size(varargin{2}.data)) * 2;
+
+% Log number of gamma calculations (for curiosity)
+Event(sprintf('Number of gamma calculations = %g', ...
+    numel(gamma) * res * 2 * size(varargin{2}.width,2)));
 
 % Start try-catch block to safely test for CUDA functionality
 try
@@ -325,6 +352,9 @@ try
    
 % If GPU fails, revert to CPU computation
 catch
+    % Log GPU failure
+    Event('GPU failed, reverting to CPU method', 'WARN'); 
+    
     % Start a for loop to interpolate the dose array along the x-direction.  
     % Note to support parfor loops indices must be integers, so x varies 
     % from -2 to +2 multiplied by the number of interpolation steps.  
@@ -416,6 +446,10 @@ catch
     end
 end
     
+% Log completion
+Event(sprintf('Gamma calculation completed successfully in %0.3f seconds', ...
+    toc));
+
 % Clear temporary variables
 clear refX refY refZ tarX tarY tarZ interp;
 

@@ -23,7 +23,12 @@ function handles = ParseSNCProfiles(handles, head)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
+% If data exists to parse
 if isfield(handles, [head, 'data'])
+    % Log start
+    Event('Parsing SNC PRM file contents');
+    tic;
+
     %% Parse MLC Y values
     % Initialize data array
     handles.([head,'Y']) = zeros(3, handles.([head,'num'])(2));
@@ -45,6 +50,9 @@ if isfield(handles, [head, 'data'])
         handles.([head,'bkgd'])(1:handles.([head,'num'])(2))) .* ...
         handles.([head,'cal'])(1:handles.([head,'num'])(2));
     
+    % Log event
+    Event('MLC Y profile extracted');
+    
     % Interpolate ignored channels
     for i = 2:size(handles.([head,'Y']),2) - 1
         % If the ignore flag is set
@@ -52,6 +60,10 @@ if isfield(handles, [head, 'data'])
             % Interpolate linearly from neighboring values
             handles.([head,'Y'])(2,i) = (handles.([head,'Y'])(2,i-1) + ...
                 handles.([head,'Y'])(2,i+1)) / 2;
+            
+            % Log event
+            Event(sprintf(['Detector %i ignored, interpolated from ', ...
+                'neighboring values'], i));
         end
     end
     
@@ -60,9 +72,15 @@ if isfield(handles, [head, 'data'])
         % If the spacing differs
         if (handles.([head,'Y'])(1,i+1) - handles.([head,'Y'])(1,i)) < ...
                 (handles.([head,'Y'])(1,i) - handles.([head,'Y'])(1,i-1))
+            
+            % Interpolate linearly from neighboring values
             handles.([head,'Y']) = cat(2, handles.([head,'Y'])(:,1:i), ...
                 (handles.([head,'Y'])(:,i) + handles.([head,'Y'])(:,i+1))/2, ...
                 handles.([head,'Y'])(:,i+1:size(handles.([head,'Y']),2)));
+            
+            % Log event
+            Event(sprintf(['Uniform spacing interpolated between ', ...
+                'detectors %i and %i'], i, i+1));
         end
     end
     
@@ -95,6 +113,8 @@ if isfield(handles, [head, 'data'])
     
     % Compute reference center
     refCenter = (r + l) / 2;
+    Event(sprintf('Reference MLC Y profile center computed at %0.3f mm', ...
+        (r + l) / 2));
     
     % Determine location and value of maximum in measured data
     [C, I] = max(handles.([head,'Y'])(2,:));
@@ -128,10 +148,14 @@ if isfield(handles, [head, 'data'])
     % Offset measured data to center on reference
     handles.([head,'Y'])(1,:) = handles.([head,'Y'])(1,:) ...
         - (r + l) / 2 + refCenter;
+    Event(sprintf('Measured MLC Y profile center computed at %0.3f mm', ...
+        (r + l) / 2));
+    Event(sprintf('Measured MLC Y profile centered on reference'));
     
     % Normalize measured data
     handles.([head,'Y'])(2,:) = handles.([head,'Y'])(2,:) / ...
         max(handles.([head,'Y'])(2,:));
+    Event('Measured MLC Y profile normalized to 1');
     
     % Prepare CalcGamma inputs (which uses start/width/data format)
     target.start = handles.([head,'Y'])(1,1);
@@ -169,13 +193,21 @@ if isfield(handles, [head, 'data'])
         handles.([head,'cal'])(1 + handles.([head,'num'])(2):...
         handles.([head,'num'])(2) + handles.([head,'num'])(1));
     
+    % Log event
+    Event('MLC Y profile extracted');
+    
     % Interpolate ignored channels
     for i = 2:size(handles.([head,'X']),2) - 1
         % If the ignore flag is set
         if handles.([head,'ignore'])(i) == 1
+            
             % Interpolate linearly from neighboring values
             handles.([head,'X'])(2,i) = (handles.([head,'X'])(2,i-1) + ...
                 handles.([head,'X'])(2,i+1)) / 2;
+            
+            % Log event
+            Event(sprintf(['Detector %i ignored, interpolated from ', ...
+                'neighboring values'], i));
         end
     end
     
@@ -208,6 +240,8 @@ if isfield(handles, [head, 'data'])
     
     % Compute reference center
     refCenter = (r + l) / 2;
+    Event(sprintf('Reference MLC X profile center computed at %0.3f mm', ...
+        (r + l) / 2));
     
     % Determine location and value of maximum in measured data
     [C, I] = max(handles.([head,'X'])(2,:));
@@ -241,10 +275,14 @@ if isfield(handles, [head, 'data'])
     % Offset measured data to center on reference
     handles.([head,'X'])(1,:) = handles.([head,'X'])(1,:) ...
         - (r + l) / 2 + refCenter;
+    Event(sprintf('Measured MLC X profile center computed at %0.3f mm', ...
+        (r + l) / 2));
+    Event(sprintf('Measured MLC X profile centered on reference'));
     
     % Normalize measured data
     handles.([head,'X'])(2,:) = handles.([head,'X'])(2,:) / ...
         max(handles.([head,'X'])(2,:));
+    Event('Measured MLC Y profile normalized to 1');
     
     % Prepare CalcGamma inputs (which uses start/width/data format)
     target.start = handles.([head,'X'])(1,1);
@@ -272,12 +310,14 @@ if isfield(handles, [head, 'data'])
     % Store center IC Profiler Y detector response
     handles.([head,'T'])(2,:) = handles.([head,'data'])(:,5 + ...
         handles.([head,'num'])(2) + (handles.([head,'num'])(1) + 1)/2);
+    Event('Timing cumulative profile extracted');
     
     % Convert signal from integral to differential
     handles.([head,'T'])(2,:) = handles.([head,'T'])(2,:) - ...
         circshift(handles.([head,'T'])(2, :),1,2);
+    Event('Timing cumulative profile converted to differential profile');
     
-    % Divide signal by tics per packet and normalize
+    % Divide signal by tics per packet
     handles.([head,'T'])(2,:) = handles.([head,'T'])(2,:) ./ ...
         (handles.([head,'T'])(1,:) - ...
         circshift(handles.([head,'T'])(1, :),1,2));
@@ -286,4 +326,8 @@ if isfield(handles, [head, 'data'])
     handles.([head,'T'])(2,1) = handles.([head,'data'])(1,5 + ...
         handles.([head,'num'])(2) + (handles.([head,'num'])(1) + 1)/2) / ...
         handles.([head,'data'])(1,3) * 1000000;
+    
+    % Log completion
+    Event(sprintf(['SNC PRM profiles parsed successfully in ', ...
+        '%0.3f seconds'], toc));
 end
