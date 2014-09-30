@@ -12,30 +12,30 @@ The following steps illustrate how to acquire and process 90 degree measurements
 
 ## Set up the IC Profiler
 
-1. Attach the SNC IC Profiler to the IC Profiler jig.
-2. Connect the IC Profiler to the Physics Workstation using the designated cable.
-3. Launch the SNC Profiler software on the Physics Workstation.
-4. Select the most recent Dose calibration from the dropdown box.
-5. Select the most recent array Calibration from the dropdown box.
-6. Verify the mode is continuous by clicking the Control menu.
+1. Attach the SNC IC Profiler to the IC Profiler jig
+2. Connect the IC Profiler to the Physics Workstation using the designated cable
+3. Launch the SNC Profiler software on the Physics Workstation
+4. Select the most recent Dose calibration from the dropdown box
+5. Select the most recent array Calibration from the dropdown box
+6. Verify the mode is continuous by clicking the Control menu
 
 ## Orient the IC Profiler in the Sagittal Position
 
-1. Place the SNC Profiler jig on the couch at virtual isocenter and orient the jig in the Sagittal orientation, as shown.
-  1. The top of the profiler will be facing the IEC+X axis.
-  2. The electronics will be on the facing upwards (IEC+Y axis).
-  3. Place an aluminum level on the front face of the IC Profiler as shown.
-  4. Verify the profiler is parallel with the IEC Sagittal plane.
-  5. Use the leveling feet on the jig to adjust if necessary.
-  6. Laterally adjust the jig until the overhead IEC X laser is aligned to the front face of the IC Profiler.
-  7. Record the current couch position.
-  8. Use the Couch Control Panel to move the couch and IC Profiler +0.9 cm in the IEC+X direction.
-  9. The detector plane of the IC Profiler should now be at isocenter.
-  10. Vertically and Longitudinally align the IC Profiler to the crosshairs using the wall IEC Y and IEC Z laser.
-  11. Press the ENABLE and ISO buttons on the Couch Control Panel to move the couch from virtual to mechanical isocenter.
-2. On the ViewRay TPDS, select Tools > QA Procedure and select the Calibration tab.
-3. Select an arbitrary phantom and click Load Phantom.
-4. Under Beam Setup and Controls, select Head 3.
+1. Place the SNC Profiler jig on the couch at virtual isocenter and orient the jig in the Sagittal orientation, as shown
+  1. The top of the profiler will be facing the IEC+X axis
+  2. The electronics will be on the facing upwards (IEC+Y axis)
+  3. Place an aluminum level on the front face of the IC Profiler as shown
+  4. Verify the profiler is parallel with the IEC Sagittal plane
+  5. Use the leveling feet on the jig to adjust if necessary
+  6. Laterally adjust the jig until the overhead IEC X laser is aligned to the front face of the IC Profiler
+  7. Record the current couch position
+  8. Use the Couch Control Panel to move the couch and IC Profiler +0.9 cm in the IEC+X direction
+  9. The detector plane of the IC Profiler should now be at isocenter
+  10. Vertically and Longitudinally align the IC Profiler to the crosshairs using the wall IEC Y and IEC Z laser
+  11. Press the ENABLE and ISO buttons on the Couch Control Panel to move the couch from virtual to mechanical isocenter
+2. On the ViewRay TPDS, select Tools > QA Procedure and select the Calibration tab
+3. Select an arbitrary phantom and click Load Phantom
+4. Under Beam Setup and Controls, select Head 3
 5. Set Delivery Angle to 90 degrees
 6. Under MLC Setup, set the following MLC positions: X1/Y1 = -13.65 cm, X2/Y2 = +13.65 cm
 7. Click Set Shape to apply the MLC positions
@@ -56,13 +56,13 @@ The following steps illustrate how to acquire and process 90 degree measurements
   6. Click on the General tab
   7. Under Description, type Head #, where # is the head number (1 in this instance)
   8. Click OK
-  9. When asked to save the file, choose Multi-Frame type and save the results to _H1_G90_27p3.prm_
+  9. When asked to save the file, choose Multi-Frame type and save the results to _H1 G90 27p3.prm_
 17. Repeat for Heads 2 and 3
 
 ## Analyze Field Uniformity Data
 
 1. Execute the FieldUniformity.m MATLAB script
-2. Under Head 1, click Browse to load the SNC IC Profiler H1_G90_27p3.prm Multi-Frame export
+2. Under Head 1, click Browse to load the SNC IC Profiler _H1 G90 27p3.prm_ Multi-Frame export
 3. Continue to load the remaining heads
 4. Review the resulting profile comparisons and statistics, as shown in the example
   1. Verify that each profile looks as expected and that no data points (particularly those in the central 80% of the field) appear distorted due to noise or measurement error
