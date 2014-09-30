@@ -68,7 +68,6 @@ The following steps illustrate how to acquire and process 90 degree measurements
   1. Verify that each profile looks as expected and that no data points (particularly those in the central 80% of the field) appear distorted due to noise or measurement error
   2. Verify that the MLC X and Y flatness and area symmetry are within +/- 2% of their baseline values for all three heads
 5. Verify that the time difference between the Expected and Measured beam on time are within 0.1 seconds
-6. Record a screenshot of the MATLAB script GUI to save in the report
 
 
 ## Compatibility and Requirements
