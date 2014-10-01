@@ -127,10 +127,13 @@ switch get(handles.([head, 'display']),'Value')
             % Plot gamma
             plot(handles.([head,'X'])(1,:), handles.([head,'X'])(3,:), ...
                 'Color', [0 0.75 0.75]);
+                      
+            % Add legend
+            legend('Reference', 'Measured', 'Gamma', 'location', 'SouthEast');
             
             % Format plot
             hold off;
-            ylabel('Normalized Measurement');
+            ylabel('Normalized Value');
             ylim([0 1.05]);
             xlabel('MLC X Position (mm)');
             xlim([-160 160]);
@@ -164,9 +167,12 @@ switch get(handles.([head, 'display']),'Value')
             plot(handles.([head,'Y'])(1,:), handles.([head,'Y'])(3,:), ...
                 'Color', [0 0.75 0.75]);
             
+            % Add legend
+            legend('Reference', 'Measured', 'Gamma', 'location', 'SouthEast');
+            
             % Format plot
             hold off;
-            ylabel('Normalized Measurement');
+            ylabel('Normalized Value');
             ylim([0 1.05]);
             xlabel('MLC Y Position (mm)');
             xlim([-160 160]);
