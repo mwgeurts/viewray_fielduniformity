@@ -17,7 +17,7 @@ function varargout = FieldUniformity(varargin)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
-% Last Modified by GUIDE v2.5 29-Sep-2014 14:03:22
+% Last Modified by GUIDE v2.5 01-Oct-2014 12:12:54
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -465,3 +465,30 @@ Event('H3 data cleared from memory');
 
 % Update handles structure
 guidata(hObject, handles);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function figure1_ResizeFcn(hObject, ~, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Set units to pixels
+set(hObject,'Units','pixels') 
+
+% Loop through each head statistics table
+for i = 1:3
+    
+    % Get table width
+    pos = get(handles.(sprintf('h%itable', i)), 'Position') .* ...
+        get(handles.(sprintf('uipanel%i', i)), 'Position') .* ...
+        get(hObject, 'Position');
+    
+    % Update column widths to scale to new table size
+    set(handles.(sprintf('h%itable', i)), 'ColumnWidth', ...
+        {floor(0.75*pos(3))-12 floor(0.25*pos(3))-12});
+end
+
+% Clear temporary variables
+clear pos;
+    
