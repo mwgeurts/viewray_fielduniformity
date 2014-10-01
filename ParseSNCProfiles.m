@@ -65,7 +65,7 @@ if isfield(handles, [head, 'data'])
                 handles.([head,'Y'])(2,i+1)) / 2;
             
             % Log event
-            Event(sprintf(['Detector %i ignored, interpolated from ', ...
+            Event(sprintf(['MLC Y detector %i ignored, interpolated from ', ...
                 'neighboring values'], i));
         end
     end
@@ -83,7 +83,7 @@ if isfield(handles, [head, 'data'])
             
             % Log event
             Event(sprintf(['Uniform spacing interpolated between ', ...
-                'detectors %i and %i'], i, i+1));
+                'MLC Y detectors %i and %i'], i, i+1));
         end
     end
     
@@ -148,12 +148,14 @@ if isfield(handles, [head, 'data'])
         end
     end   
     
-    % Offset measured data to center on reference
-    handles.([head,'Y'])(1,:) = handles.([head,'Y'])(1,:) ...
-        - (r + l) / 2 + refCenter;
+    % Log measured profile center
     Event(sprintf('Measured MLC Y profile center computed at %0.3f mm', ...
         (r + l) / 2));
-    Event(sprintf('Measured MLC Y profile centered on reference'));
+    
+    % Offset measured data to center on reference
+    % handles.([head,'Y'])(1,:) = handles.([head,'Y'])(1,:) ...
+    %     - (r + l) / 2 + refCenter;
+    % Event(sprintf('Measured MLC Y profile centered on reference'));
     
     % Normalize measured data
     handles.([head,'Y'])(2,:) = handles.([head,'Y'])(2,:) / ...
@@ -209,7 +211,7 @@ if isfield(handles, [head, 'data'])
                 handles.([head,'X'])(2,i+1)) / 2;
             
             % Log event
-            Event(sprintf(['Detector %i ignored, interpolated from ', ...
+            Event(sprintf(['MLC X detector %i ignored, interpolated from ', ...
                 'neighboring values'], i));
         end
     end
@@ -275,12 +277,14 @@ if isfield(handles, [head, 'data'])
         end
     end   
     
-    % Offset measured data to center on reference
-    handles.([head,'X'])(1,:) = handles.([head,'X'])(1,:) ...
-        - (r + l) / 2 + refCenter;
+    % Log measured profile center
     Event(sprintf('Measured MLC X profile center computed at %0.3f mm', ...
         (r + l) / 2));
-    Event(sprintf('Measured MLC X profile centered on reference'));
+    
+    % Offset measured data to center on reference
+    % handles.([head,'X'])(1,:) = handles.([head,'X'])(1,:) ...
+    %     - (r + l) / 2 + refCenter;
+    % Event(sprintf('Measured MLC X profile centered on reference'));
     
     % Normalize measured data
     handles.([head,'X'])(2,:) = handles.([head,'X'])(2,:) / ...

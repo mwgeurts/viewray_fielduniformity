@@ -93,8 +93,8 @@ switch get(handles.([head, 'display']),'Value')
             
             % Calculate where the y labels should go in order to be
             % uniformly spaced around zero
-            ylabels = interp1(handles.refY(1,:), ...
-                1:length(handles.refY(1,:)), -200:50:200, 'linear', 'extrap');
+            ylabels = sort(interp1(fliplr(handles.refY(1,:)), ...
+                1:length(handles.refY(1,:)), -200:50:200, 'linear', 'extrap'));
             
             % Set y ticks and labels
             set(gca, 'YTick', ylabels);

@@ -154,7 +154,7 @@ if isfield(handles, 'refX') && size(handles.refX, 2) > 0
     end
     
     % Report FWHM
-    refXFWHM = r-l;
+    refXFWHM = abs(r-l);
     table{c,2} = sprintf('%0.2f mm', refXFWHM);
     Event(sprintf('RefX FWHM edges identified at %0.3f and %0.3f mm', [l r]));
 end
@@ -198,7 +198,7 @@ if isfield(handles, [head,'X']) && size(handles.([head,'X']), 2) > 0
     end
     
     % Report FWHM
-    table{c,2} = sprintf('%0.2f mm', r-l);
+    table{c,2} = sprintf('%0.2f mm', abs(r-l));
     Event(sprintf(['Measured MLC X FWHM edges identified at %0.3f ', ...
         'and %0.3f mm'], [l r]));
 end
@@ -207,7 +207,7 @@ end
 c = c + 1;
 table{c,1} = 'MLC X FWHM difference';
 if isfield(handles, [head,'X']) && size(handles.([head,'X']), 2) > 0
-    table{c,2} = sprintf('%0.2f mm', r-l - refXFWHM);
+    table{c,2} = sprintf('%0.2f mm', abs(r-l) - refXFWHM);
 end
 
 % MLC X Flatness
@@ -307,7 +307,7 @@ if isfield(handles, 'refY') && size(handles.refY, 2) > 0
     end
     
     % Report FWHM
-    refYFWHM = r-l;
+    refYFWHM = abs(r-l);
     table{c,2} = sprintf('%0.2f mm', refYFWHM);
     Event(sprintf('RefY FWHM edges identified at %0.3f and %0.3f mm', [l r]));
 end
@@ -351,7 +351,7 @@ if isfield(handles, [head,'Y']) && size(handles.([head,'Y']), 2) > 0
     end
     
     % Report FWHM
-    table{c,2} = sprintf('%0.2f mm', r-l);
+    table{c,2} = sprintf('%0.2f mm', abs(r-l));
     Event(sprintf(['Measured MLC Y FWHM edges identified at %0.3f ', ...
         'and %0.3f mm'], [l r]));
 end
@@ -360,7 +360,7 @@ end
 c = c + 1;
 table{c,1} = 'MLC Y FWHM difference';
 if isfield(handles, [head,'Y']) && size(handles.([head,'Y']), 2) > 0
-    table{c,2} = sprintf('%0.2f mm', r-l - refYFWHM);
+    table{c,2} = sprintf('%0.2f mm', abs(r-l) - refYFWHM);
 end
 
 % MLC Y Flatness

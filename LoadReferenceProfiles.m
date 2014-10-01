@@ -48,6 +48,9 @@ refY(1,:) = meshY(:,1);
 refY(2,:) = interp2(meshX, meshY, single(data), zeros(1,size(refY,2)), ...
     refY(1,:), '*linear', 0);
 
+% Flip MLC Y data, as DICOM coordinates are inverted
+refY = fliplr(refY);
+
 % Normalize return variables
 refX(2,:) = refX(2,:) / max(refX(2,:));
 refY(2,:) = refY(2,:) / max(refY(2,:));
