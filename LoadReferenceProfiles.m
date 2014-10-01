@@ -21,6 +21,9 @@ function [refX, refY, data] = LoadReferenceProfiles(file)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
+% Run in try-catch to log error via Event.m
+try
+    
 % Log start
 Event(['Loading reference dataset ', file]);
 tic;
@@ -33,15 +36,15 @@ data = single(dicomread(file)) * info.DoseGridScaling;
     
 % Generate mesh
 [meshX, meshY]  = meshgrid(start(2):width(2):start(2)+width(2)*...
-    (size(data,2)-1),start(1):width(1):start(1)+width(1)*(size(data,1)-1));
+    (size(data,2)-1),start(1)+width(1)*(size(data,1)-1):-width(1):start(1));
     
 % Extract MLC X axis data
-refX(1,:) = meshY(:,1);
+refX(1,:) = meshX(1,:);
 refX(2,:) = interp2(meshX, meshY, single(data), refX(1,:), ...
     zeros(1,size(refX,2)), '*linear', 0);
 
 % Extract MLC Y axis data
-refY(1,:) = meshX(1,:);
+refY(1,:) = meshY(:,1);
 refY(2,:) = interp2(meshX, meshY, single(data), zeros(1,size(refY,2)), ...
     refY(1,:), '*linear', 0);
 
@@ -53,3 +56,8 @@ Event('Reference profiles normalized to 1');
 
 % Log completion
 Event(sprintf('Reference dataset successfully loaded in %0.3f seconds', toc));
+
+% Catch errors, log, and rethrow
+catch err
+    Event(getReport(err, 'extended', 'hyperlinks', 'off'), 'ERROR');
+end

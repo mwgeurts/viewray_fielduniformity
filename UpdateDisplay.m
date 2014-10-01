@@ -23,6 +23,9 @@ function varargout = UpdateDisplay(varargin)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
+% Run in try-catch to log error via Event.m
+try
+
 % Specify plot options and order
 plotoptions = {
     ''
@@ -77,12 +80,12 @@ switch get(handles.([head, 'display']),'Value')
         % If data exists
         if isfield(handles, 'refData')
             % Plot transposed reference field
-            imagesc(handles.refData');
+            imagesc(handles.refData);
             
             % Calculate where the x labels should go in order to be
             % uniformly spaced around zero
-            xlabels = interp1(handles.refY(1,:), ...
-                1:length(handles.refY(1,:)), -200:50:200);
+            xlabels = interp1(handles.refX(1,:), ...
+                1:length(handles.refX(1,:)), -200:50:200, 'linear', 'extrap');
             
             % Set x ticks and labels
             set(gca, 'XTick', xlabels);
@@ -90,8 +93,8 @@ switch get(handles.([head, 'display']),'Value')
             
             % Calculate where the y labels should go in order to be
             % uniformly spaced around zero
-            ylabels = interp1(handles.refX(1,:), ...
-                1:length(handles.refX(1,:)), -200:50:200);
+            ylabels = interp1(handles.refY(1,:), ...
+                1:length(handles.refY(1,:)), -200:50:200, 'linear', 'extrap');
             
             % Set y ticks and labels
             set(gca, 'YTick', ylabels);
@@ -204,3 +207,8 @@ Event(sprintf('Plot updated successfully in %0.3f seconds', toc));
 
 % Return the modified handles
 varargout{1} = handles; 
+
+% Catch errors, log, and rethrow
+catch err
+    Event(getReport(err, 'extended', 'hyperlinks', 'off'), 'ERROR');
+end

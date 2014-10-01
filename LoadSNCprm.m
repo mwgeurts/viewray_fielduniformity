@@ -22,6 +22,8 @@ function handles = LoadSNCprm(handles, head)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
+% Run in try-catch to log error via Event.m
+try
 
 % Request the user to select the SNC ArcCHECK acm file
 Event('UI window opened to select file');
@@ -152,5 +154,8 @@ if ~name == 0
     Event(sprintf('SNC file loaded successfully in %0.3f seconds', toc));
 end
     
-    
+% Catch errors, log, and rethrow
+catch err
+    Event(getReport(err, 'extended', 'hyperlinks', 'off'), 'ERROR');
+end
     

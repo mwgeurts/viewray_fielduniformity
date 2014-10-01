@@ -23,6 +23,9 @@ function handles = UpdateStatistics(handles, head)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
+% Run in try-catch to log error via Event.m
+try
+    
 % Log start
 Event(['Updating ', head, 'table statistics']);
 tic;
@@ -427,3 +430,8 @@ set(handles.([head, 'table']), 'Data', table);
 
 % Log completion
 Event(sprintf('Statistics table updated successfully in %0.3f seconds', toc));
+
+% Catch errors, log, and rethrow
+catch err
+    Event(getReport(err, 'extended', 'hyperlinks', 'off'), 'ERROR');
+end

@@ -23,6 +23,9 @@ function handles = ParseSNCProfiles(handles, head)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
+% Run in try-catch to log error via Event.m
+try
+    
 % If data exists to parse
 if isfield(handles, [head, 'data'])
     % Log start
@@ -330,4 +333,9 @@ if isfield(handles, [head, 'data'])
     % Log completion
     Event(sprintf(['SNC PRM profiles parsed successfully in ', ...
         '%0.3f seconds'], toc));
+end
+
+% Catch errors, log, and rethrow
+catch err
+    Event(getReport(err, 'extended', 'hyperlinks', 'off'), 'ERROR');
 end
