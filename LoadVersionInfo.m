@@ -14,6 +14,7 @@ function cellarr = LoadVersionInfo()
 %       Java HotSpot(TM) 64-Bit Server VM mixed mode)
 %   cellarr{6}: Date/time of most recent file (30-Sep-2014 16:02:27)
 %
+% Author: Mark Geurts, mark.w.geurts@gmail.com
 % Copyright (C) 2014 University of Wisconsin Board of Regents
 %
 % This program is free software: you can redistribute it and/or modify it 

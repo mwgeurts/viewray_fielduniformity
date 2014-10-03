@@ -8,6 +8,7 @@ function Event(varargin)
 %   varargin{2} (optional): varargin{2} of event (INFO, WARN, ERROR, etc) 
 %   guihandle (optional): handle to uitable handle to display events
 %
+% Author: Mark Geurts, mark.w.geurts@gmail.com
 % Copyright (C) 2014 University of Wisconsin Board of Regents
 %
 % This program is free software: you can redistribute it and/or modify it 
