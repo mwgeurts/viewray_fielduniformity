@@ -10,12 +10,17 @@ When measuring data with IC Profiler, it is assumed that the profiler will be po
 
 ## Contents
 
+* [Installation and Use](README.md#installation-and-use)
 * [Measurement Instructions](README.md#measurement-instructions)
   * [Set up the IC Profiler](README.md#set-up-the-ic-profiler)  
   * [Orient the IC Profiler in the Sagittal Position](README.md#orient-the-ic-profiler-in-the-sagittal-position)
   * [Analyze Field Uniformity Data](README.md#analyze-field-uniformity-data)
 * [Gamma Computation Methods](README.md#gamma-computation-methods)
 * [Compatibility and Requirements](README.md#compatibility-and-requirements)
+
+## Installation and Use
+
+To run this application, copy all MATLAB .m and .fig and DICOM .dcm files into a directory with read/write access and then execute FieldUniformity.m.  Global configuration variables such as Gamma criteria and the expected beam on time can be modified by changing the values in `FieldUniformity_OpeningFcn` prior to execution.  A log file will automatically be created in the same directory and can be used for troubleshooting.  For instructions on acquiring the input data, see [Measurement Instructions](README.md#measurement-instructions). For information about software version and configuration pre-requisities, see [Compatibility and Requirements](README.md#compatibility-and-requirements).
 
 ## Measurement Instructions
 
