@@ -8,9 +8,25 @@ FieldUniformity.m loads Monte Carlo treatment planning data from the ViewRay Tre
 
 When measuring data with IC Profiler, it is assumed that the profiler will be positioned with the electronics pointing toward IEC+Z for a 90 degree gantry angle for 30 seconds of beam on time. The Monte Carlo data assumes that a symmetric 27.3 cm x 27.3 cm is delivered through the front of the IC Profiler.  The IC Profiler data must be saved in Multi-Frame format.
 
+## Contents
+
+* [Installation and Use](README.md#installation-and-use)
+* [Measurement Instructions](README.md#measurement-instructions)
+  * [Set up the IC Profiler](README.md#set-up-the-ic-profiler)  
+  * [Orient the IC Profiler in the Sagittal Position](README.md#orient-the-ic-profiler-in-the-sagittal-position)
+  * [Analyze Field Uniformity Data](README.md#analyze-field-uniformity-data)
+* [Gamma Computation Methods](README.md#gamma-computation-methods)
+* [Compatibility and Requirements](README.md#compatibility-and-requirements)
+
+## Installation and Use
+
+To run this application, copy all MATLAB .m and .fig and DICOM .dcm files into a directory with read/write access and then execute FieldUniformity.m.  Global configuration variables such as Gamma criteria and the expected beam on time can be modified by changing the values in `FieldUniformity_OpeningFcn` prior to execution.  A log file will automatically be created in the same directory and can be used for troubleshooting.  For instructions on acquiring the input data, see [Measurement Instructions](README.md#measurement-instructions). For information about software version and configuration pre-requisities, see [Compatibility and Requirements](README.md#compatibility-and-requirements).
+
+## Measurement Instructions
+
 The following steps illustrate how to acquire and process 90 degree measurements.  Similar measurements may be acquired at different gantry angles using the same reference profile so long as the IC Profiler is set up the same way relative to the beam angle.  
 
-## Set up the IC Profiler
+### Set up the IC Profiler
 
 1. Attach the SNC IC Profiler to the IC Profiler jig
 2. Connect the IC Profiler to the Physics Workstation using the designated cable
@@ -19,7 +35,7 @@ The following steps illustrate how to acquire and process 90 degree measurements
 5. Select the most recent array Calibration from the dropdown box
 6. Verify the mode is continuous by clicking the Control menu
 
-## Orient the IC Profiler in the Sagittal Position
+### Orient the IC Profiler in the Sagittal Position
 
 1. Place the SNC Profiler jig on the couch at virtual isocenter and orient the jig in the Sagittal orientation, as shown
   1. The top of the profiler will be facing the IEC+X axis
@@ -59,7 +75,7 @@ The following steps illustrate how to acquire and process 90 degree measurements
   9. When asked to save the file, choose Multi-Frame type and save the results to _H1 G90 27p3.prm_
 17. Repeat for Heads 2 and 3
 
-## Analyze Field Uniformity Data
+### Analyze Field Uniformity Data
 
 1. Execute the FieldUniformity.m MATLAB script
 2. Under Head 1, click Browse to load the SNC IC Profiler _H1 G90 27p3.prm_ Multi-Frame export
@@ -69,6 +85,27 @@ The following steps illustrate how to acquire and process 90 degree measurements
   2. Verify that the MLC X and Y flatness and area symmetry are within +/- 2% of their baseline values for all three heads
 5. Verify that the time difference between the Expected and Measured beam on time are within 0.1 seconds
 
+## Gamma Computation Methods
+
+The Gamma analysis is performed based on the formalism presented by D. A. Low et. al., [A technique for the quantitative evaluation of dose distributions.](http://www.ncbi.nlm.nih.gov/pubmed/9608475), Med Phys. 1998 May; 25(5): 656-61.  In this formalism, the Gamma quality index *&gamma;* is defined as follows for each point along the measured profile *Rm* given the reference profile *Rc*:
+
+*&gamma; = min{&Gamma;(Rm,Rc}&forall;{Rc}*
+
+where:
+
+*&Gamma; = &radic; (r^2(Rm,Rc)/&Delta;dM^2 + &delta;^2(Rm,Rc)/&Delta;DM^2)*,
+
+*r(Rm,Rc) = | Rc - Rm |*,
+
+*&delta;(Rm,Rc) = Dc(Rc) - Dm(Rm)*,
+
+*Dc(Rc)* and *Dm(Rm)* represent the reference and measured signal at each *Rc* and *Rm*, respectively, and
+
+*/&Delta;dM* and *&Delta;DM* represent the absolute and Distance To Agreement Gamma criterion (by default 2%/1mm), respectively.  
+
+The absolute criterion is typically given in percent and can refer to a percent of the maximum dose (commonly called the global method) or a percentage of the voxel *Rm* being evaluated (commonly called the local method).  The application is capable of computing gamma using either approach, and can be set when calling CalcGamma.m by passing a boolean value of 1 (for local) or 0 (for global).  By default, the global method (0) is used.
+
+The computation applied in the tool is the 1D algorithm, in that the distance to agreement criterion is evaluated only along the dimension of the reference profile when determining *min{&Gamma;(Rm,Rc}&forall;{Rc}*. To accomplish this, the reference profile is shifted relative to the measured profile using linear 1D CUDA (when available) interpolation.  For each shift, *&Gamma;(Rm,Rc}* is computed, and the minimum value *&gamma;* is determined.  To improve computation efficiency, the computation space *&forall;{Rc}* is limited to twice the distance to agreement parameter.  Thus, the maximum "real" Gamma index returned by the application is 2.
 
 ## Compatibility and Requirements
 
