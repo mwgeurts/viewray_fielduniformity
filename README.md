@@ -8,6 +8,15 @@ FieldUniformity.m loads Monte Carlo treatment planning data from the ViewRay Tre
 
 When measuring data with IC Profiler, it is assumed that the profiler will be positioned with the electronics pointing toward IEC+Z for a 90 degree gantry angle for 30 seconds of beam on time. The Monte Carlo data assumes that a symmetric 27.3 cm x 27.3 cm is delivered through the front of the IC Profiler.  The IC Profiler data must be saved in Multi-Frame format.
 
+## Contents
+
+* [Measurement Instructions](README.md#measurement-instructions)
+  * [Set up the IC Profiler](README.md#set-up-the-ic-profiler)  
+  * [Orient the IC Profiler in the Sagittal Position](README.md#orient-the-ic-profiler-in-the-sagittal-position)
+  * [Analyze Field Uniformity Data](README.md#analyze-field-uniformity-data)
+* [Gamma Computation Methods](README.md#gamma-computation-methods)
+* [Compatibility and Requirements](README.md#compatibility-and-requirements)
+
 ## Measurement Instructions
 
 The following steps illustrate how to acquire and process 90 degree measurements.  Similar measurements may be acquired at different gantry angles using the same reference profile so long as the IC Profiler is set up the same way relative to the beam angle.  
