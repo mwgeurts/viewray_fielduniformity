@@ -109,4 +109,4 @@ The computation applied in the tool is the 1D algorithm, in that the distance to
 
 ## Compatibility and Requirements
 
-This tool has been tested with ViewRay version 3.5 treatment software, Sun Nuclear IC Profiler software version 3.3.1.31111, and MATLAB R2014a.  The Parallel Computing toolbox and a CUDA-compatible GPU are required to run GPU based interpolation (CPU interpolation is automatically supported if not present).
+This tool has been tested with ViewRay version 3.5 treatment software and Sun Nuclear IC Profiler software version 3.3.1.31111, and MATLAB 8.3 and 8.4.  The Parallel Computing toolbox (versions 6.4 and 6.5 tested and a CUDA-compatible GPU are required to run GPU based interpolation (CPU interpolation is automatically supported if not present).
