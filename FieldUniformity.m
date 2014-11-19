@@ -119,6 +119,17 @@ handles.dta = 1.0; % mm
 Event(sprintf('Gamma criteria set to %0.1f%%/%0.1f mm', ...
     [handles.abs handles.dta]));
 
+% Add gamma submodule to search path
+addpath('./gamma');
+
+% Check if MATLAB can find CalcGamma.m
+if exist('CalcGamma', 'file') ~= 2
+    % If not, throw an error
+    Event(['The CalcGamma submodule does not exist in the search path. Use ', ...
+        'git clone --recursive or git submodule init followed by git ', ...
+        'submodule update to fetch all submodules'], 'ERROR');
+end
+
 % Load reference profiles
 [handles.refX, handles.refY, handles.refData] = ...
     LoadReferenceProfiles('AP_27P3X27P3_PlaneDose_Vertical_Isocenter.dcm');
