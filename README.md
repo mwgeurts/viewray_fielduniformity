@@ -79,10 +79,10 @@ The following steps illustrate how to acquire and process 90 degree measurements
 
 ### Analyze Field Uniformity Data
 
-1. Execute the FieldUniformity.m MATLAB script
+1. Execute the `FieldUniformity` in MATLAB
 2. Under Head 1, click Browse to load the SNC IC Profiler _H1 G90 27p3.prm_ Multi-Frame export
 3. Continue to load the remaining heads
-4. Review the resulting profile comparisons and statistics, as shown in the example
+4. Review the resulting profile comparisons and statistics
   1. Verify that each profile looks as expected and that no data points (particularly those in the central 80% of the field) appear distorted due to noise or measurement error
   2. Verify that the MLC X and Y flatness and area symmetry are within +/- 2% of their baseline values for all three heads
 5. Verify that the time difference between the Expected and Measured beam on time are within 0.1 seconds
