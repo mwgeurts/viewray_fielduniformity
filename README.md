@@ -20,7 +20,7 @@ When measuring data with IC Profiler, it is assumed that the profiler will be po
 
 ## Installation and Use
 
-To install this application, copy all MATLAB .m and .fig and DICOM .dcm files into a directory with read/write access and then copy the [CalcGamma.m submodule from the gamma repository](https://github.com/mwgeurts/gamma) into the gamma subfolder.  If using git, execute `git clone --recursive https://github.com/mwgeurts/fielduniformity`.
+To install this application, copy all MATLAB .m and .fig and DICOM .dcm files into a directory with read/write access and then copy the [CalcGamma.m submodule from the gamma repository](https://github.com/mwgeurts/gamma) into the gamma subfolder.  If using git, execute `git clone --recursive https://github.com/mwgeurts/viewray_fielduniformity`.
 
 To run this application, navigate to the installation path and execute `FieldUniformity` in MATLAB.  Global configuration variables such as Gamma criteria and the expected beam on time can be modified by changing the values in `FieldUniformity_OpeningFcn` prior to execution.  A log file will automatically be created in the same directory and can be used for troubleshooting.  For instructions on acquiring the input data, see [Measurement Instructions](README.md#measurement-instructions). For information about software version and configuration pre-requisities, see [Compatibility and Requirements](README.md#compatibility-and-requirements).
 
