@@ -67,6 +67,15 @@ function FieldUniformity_OpeningFcn(hObject, ~, handles, varargin)
 % Choose default command line output for FieldUniformity
 handles.output = hObject;
 
+% Determine path of current application
+[path, ~, ~] = fileparts(mfilename('fullpath'));
+
+% Set current directory to location of this application
+cd(path);
+
+% Clear temporary variable
+clear path;
+
 % Set version information.  See LoadVersionInfo for more details.
 handles.versionInfo = LoadVersionInfo;
 
