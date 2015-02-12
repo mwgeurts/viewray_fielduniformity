@@ -2,11 +2,13 @@ ViewRay Field Uniformity-Timing Check
 ===========
 
 by Mark Geurts <mark.w.geurts@gmail.com>
-<br>Copyright &copy; 2014, University of Wisconsin Board of Regents
+<br>Copyright &copy; 2015, University of Wisconsin Board of Regents
 
 The ViewRay Field Uniformity-Timing Check loads Monte Carlo treatment planning data from the ViewRay&trade; Treatment Planning System and compares it to measured Sun Nuclear IC Profiler&trade; data to compare the field uniformity (field size, flatness, symmetry, etc) and evaluate the source positioning and timing accuracy.  Because the ViewRay system uses Cobalt-60, variations flatness and symmetry are the result of changes in source shuttling. Beam flatness is computed as the difference in maximum and minimum signal divided by the sum of the maximum and minimum over the central 80% of the field defined by the Full Width Half Maximum (FWHM) along the MLC X and Y central axes. Beam symmetry is computed as the difference in area under the central 80% profile (MLC X or MLC Y) to the right and left of field center, divided by twice the sum of the right and left areas. 
 
 When measuring data with IC Profiler, it is assumed that the profiler will be positioned with the electronics pointing toward IEC+Z for a 90 degree gantry angle for 30 seconds of beam on time. The Monte Carlo data assumes that a symmetric 27.3 cm x 27.3 cm is delivered through the front of the IC Profiler.  The IC Profiler data must be saved in Multi-Frame format.
+
+IC Profiler is a trademark of Sun Nuclear Corporation.  MATLAB&reg; is a registered trademark of MathWorks Inc.  ViewRay is a trademark of ViewRay Incorporated.
 
 ## Contents
 
@@ -20,13 +22,13 @@ When measuring data with IC Profiler, it is assumed that the profiler will be po
 
 ## Installation and Use
 
-To install this application, copy all MATLAB .m and .fig and DICOM .dcm files into a directory with read/write access and then copy the [CalcGamma.m submodule from the gamma repository](https://github.com/mwgeurts/gamma) into the gamma subfolder.  If using git, execute `git clone --recursive https://github.com/mwgeurts/viewray_fielduniformity`.
+To install the most recent release of this application, download [ViewRay Field Uniformity-Timing Check.mlappinstall](https://github.com/mwgeurts/viewray_mlc/archive/master.zip) from this repository, then open MATLAB, select the __Apps__ tab, and click __Install App__.  In the Install App dialog box, browse to the downloaded file and then click __Open__.  Finally, in the App Installer dialog box click __Install__ or __Reinstall__.  If using git, execute `git clone --recursive https://github.com/mwgeurts/viewray_fielduniformity`.
 
-To run this application, navigate to the installation path and execute `FieldUniformity` in MATLAB.  Global configuration variables such as Gamma criteria and the expected beam on time can be modified by changing the values in `FieldUniformity_OpeningFcn` prior to execution.  A log file will automatically be created in the same directory and can be used for troubleshooting.  For instructions on acquiring the input data, see [Measurement Instructions](README.md#measurement-instructions). For information about software version and configuration pre-requisities, see [Compatibility and Requirements](README.md#compatibility-and-requirements).
+Global configuration variables such as Gamma criteria and the expected beam on time can be modified by changing the values in `FieldUniformity_OpeningFcn` prior to execution.  A log file will automatically be created in the same directory and can be used for troubleshooting.  For instructions on acquiring the input data, see [Measurement Instructions](README.md#measurement-instructions). For information about software version and configuration pre-requisities, see [Compatibility and Requirements](README.md#compatibility-and-requirements).
 
 ## Compatibility and Requirements
 
-This tool has been tested with ViewRay version 3.5 treatment software and Sun Nuclear IC Profiler software version 3.3.1.31111, and MATLAB 8.3 through 8.5.  The Parallel Computing toolbox (versions 6.4 through 6.6 tested and a CUDA-compatible GPU are required to run GPU based interpolation (CPU interpolation is automatically supported if not present).
+This tool has been tested with ViewRay version 3.5 treatment software and Sun Nuclear IC Profiler software version 3.3.1.31111 on MATLAB 8.3 through 8.5 with the Statistics toolbox (version 9.1 tested) and Image Processing toolbox (versions 9.0 and 9.1 tested).  The Parallel Computing toolbox (version 6.4 through 6.6 tested) and a CUDA-compatible GPU are required to run GPU based interpolation (CPU interpolation is automatically supported if not present).  The Statistics toolbox is required for reference profile matching.  The Image Processing toolbox is required to use `dicominfo()` and `dicomread()`.
 
 ## Measurement Instructions
 
