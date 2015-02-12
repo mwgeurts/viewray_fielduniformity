@@ -122,9 +122,9 @@ set(handles.h2display, 'String', handles.plotoptions);
 set(handles.h3display, 'String', handles.plotoptions);
 
 % Initialize tables
-set(handles.h1table, 'Data', cell(16,2));
-set(handles.h2table, 'Data', cell(16,2));
-set(handles.h3table, 'Data', cell(16,2));
+set(handles.h1table, 'Data', cell(10,2));
+set(handles.h2table, 'Data', cell(10,2));
+set(handles.h3table, 'Data', cell(10,2));
 
 %% Initialize global variables
 % Declare the initial path to search when browsing for input files.  This

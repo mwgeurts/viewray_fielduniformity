@@ -41,15 +41,9 @@ c = c + 1;
 table{c,1} = 'Gamma criteria';
 table{c,2} = sprintf('%0.1f%%/%0.1f mm', [handles.abs, handles.dta]);
 
-% Expected time
-c = c + 1;
-table{c,1} = 'Expected beam on time';
-table{c,2} = sprintf('%0.2f sec', handles.time);
-
 % Measured time
 c = c + 1;
-table{c,1} = 'Measured beam on time';
-time = 0;
+table{c,1} = 'Beam on time difference';
 if isfield(handles, [head, 'results']) && ...
         isfield(handles.([head, 'results']), 'tdata') && ...
         size(handles.([head, 'results']).tdata, 2) > 0
@@ -90,43 +84,13 @@ if isfield(handles, [head, 'results']) && ...
             'linear')/1e3;
         
         % Report FWHM of time signal
-        time = u-l;
-        table{c,2} = sprintf('%0.2f sec', time);
+        table{c,2} = sprintf('%0.2f sec', (u - l) - handles.time);
         Event(sprintf(['Beam on time edges identified at %0.3f and ', ...
             '%0.3f seconds'], [l u]));
     end
 
     % Clear temporary variables
     clear l lI u uI C I;
-end
-
-% Measured time
-c = c + 1;
-table{c,1} = 'Time difference';
-if time > 0
-    table{c,2} = sprintf('%0.2f sec', time - handles.time);
-end
-clear time;
-
-% Reference X FWHM
-c = c + 1;
-table{c,1} = 'Reference MLC X FWHM';
-if isfield(handles, [head, 'refresults']) && ...
-        isfield(handles.([head, 'refresults']), 'yfwhm')
-
-    % Report FWHM
-    table{c,2} = sprintf('%0.2f mm', ...
-        handles.([head, 'refresults']).yfwhm(1));
-end
-
-% MLC X FWHM
-c = c + 1;
-table{c,1} = 'Measured MLC X FWHM';
-if isfield(handles, [head, 'results']) && ...
-        isfield(handles.([head, 'results']), 'yfwhm')
-
-    % Report FWHM
-    table{c,2} = sprintf('%0.2f mm', handles.([head, 'results']).yfwhm(1));
 end
 
 % MLC X FWHM Difference
@@ -164,38 +128,6 @@ if isfield(handles, [head, 'results']) && ...
         handles.([head, 'results']).ysym(1) * 100);
 end
 
-% MLC X Max Gamma
-c = c + 1;
-table{c,1} = 'MLC X max gamma';
-if isfield(handles, [head, 'results']) && ...
-        isfield(handles.([head, 'results']), 'ygamma')
-    
-    % Report max gamma
-    table{c,2} = sprintf('%0.2f', ...
-        max(handles.([head, 'results']).ygamma(2,:)));
-end
-
-% Reference Y FWHM
-c = c + 1;
-table{c,1} = 'Reference MLC Y FWHM';
-if isfield(handles, [head, 'refresults']) && ...
-        isfield(handles.([head, 'refresults']), 'xfwhm')
-
-    % Report FWHM
-    table{c,2} = sprintf('%0.2f mm', ...
-        handles.([head, 'refresults']).xfwhm(1));
-end
-
-% MLC Y FWHM
-c = c + 1;
-table{c,1} = 'Measured MLC Y FWHM';
-if isfield(handles, [head, 'results']) && ...
-        isfield(handles.([head, 'results']), 'xfwhm')
-
-    % Report FWHM
-    table{c,2} = sprintf('%0.2f mm', handles.([head, 'results']).xfwhm(1));
-end
-
 % MLC Y FWHM Difference
 c = c + 1;
 table{c,1} = 'MLC Y FWHM difference';
@@ -229,6 +161,17 @@ if isfield(handles, [head, 'results']) && ...
     % Report flatness
     table{c,2} = sprintf('%0.2f%%', ...
         handles.([head, 'results']).xsym(1) * 100);
+end
+
+% MLC X Max Gamma
+c = c + 1;
+table{c,1} = 'MLC X max gamma';
+if isfield(handles, [head, 'results']) && ...
+        isfield(handles.([head, 'results']), 'ygamma')
+    
+    % Report max gamma
+    table{c,2} = sprintf('%0.2f', ...
+        max(handles.([head, 'results']).ygamma(2,:)));
 end
 
 % MLC Y Max Gamma
