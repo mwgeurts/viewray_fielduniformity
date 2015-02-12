@@ -1,5 +1,6 @@
-*.DS_STORE
+GPU/
+ganymed-ssh2*
+.DS_STORE
 *.m~
-*.prm
 log.txt
-*.PNG
+test_data/

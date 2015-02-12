@@ -20,7 +20,7 @@ function varargout = FieldUniformity(varargin)
 % format.
 %
 % Author: Mark Geurts, mark.w.geurts@gmail.com
-% Copyright (C) 2014 University of Wisconsin Board of Regents
+% Copyright (C) 2015 University of Wisconsin Board of Regents
 %
 % This program is free software: you can redistribute it and/or modify it 
 % under the terms of the GNU General Public License as published by the  
@@ -35,7 +35,7 @@ function varargout = FieldUniformity(varargin)
 % You should have received a copy of the GNU General Public License along 
 % with this program. If not, see http://www.gnu.org/licenses/.
 
-% Last Modified by GUIDE v2.5 01-Oct-2014 12:12:54
+% Last Modified by GUIDE v2.5 11-Feb-2015 19:47:50
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -67,6 +67,9 @@ function FieldUniformity_OpeningFcn(hObject, ~, handles, varargin)
 % Choose default command line output for FieldUniformity
 handles.output = hObject;
 
+% Set version handle
+handles.version = '1.1.0';
+
 % Determine path of current application
 [path, ~, ~] = fileparts(mfilename('fullpath'));
 
@@ -81,7 +84,7 @@ handles.versionInfo = LoadVersionInfo;
 
 % Store program and MATLAB/etc version information as a string cell array
 string = {'ViewRay Field Uniformity/Timing Check'
-    sprintf('Version: %s', handles.versionInfo{6});
+    sprintf('Version: %s (%s)', handles.version, handles.versionInfo{6});
     sprintf('Author: Mark Geurts <mark.w.geurts@gmail.com>');
     sprintf('MATLAB Version: %s', handles.versionInfo{2});
     sprintf('MATLAB License Number: %s', handles.versionInfo{3});
@@ -96,6 +99,13 @@ string = sprintf('%s\n', separator, string{:}, separator);
 
 % Log information
 Event(string, 'INIT');
+
+%% Initialize UI
+% Set version UI text
+set(handles.version_text, 'String', sprintf('Version %s', handles.version));
+
+% Disable print button
+set(handles.print_button, 'enable', 'off');
 
 % Turn off images
 set(allchild(handles.h1axes), 'visible', 'off'); 
@@ -112,36 +122,59 @@ set(handles.h2display, 'String', handles.plotoptions);
 set(handles.h3display, 'String', handles.plotoptions);
 
 % Initialize tables
-set(handles.h1table, 'Data', cell(4,2));
-set(handles.h2table, 'Data', cell(4,2));
-set(handles.h3table, 'Data', cell(4,2));
+set(handles.h1table, 'Data', cell(16,2));
+set(handles.h2table, 'Data', cell(16,2));
+set(handles.h3table, 'Data', cell(16,2));
 
-% Initialize global variables
+%% Initialize global variables
+% Declare the initial path to search when browsing for input files.  This
+% path will automatically be set to the location of the most recent loaded
+% file during application execution.
 handles.path = userpath;
 Event(['Default file path set to ', handles.path]);
 
+% Declare the expected beam on time. This is used when computing the time
+% difference between measured and expected.
 handles.time = 30; % seconds (expected)
 Event(sprintf('Expected time set to %0.1f seconds', handles.time));
 
-handles.abs = 2.0; % percent
-handles.dta = 1.0; % mm
+% Declare Gamma analysis criteria
+handles.abs = 3.0; % percent
+handles.dta = 0.1; % mm
 Event(sprintf('Gamma criteria set to %0.1f%%/%0.1f mm', ...
-    [handles.abs handles.dta]));
+    [handles.abs handles.dta*10]));
 
-% Add gamma submodule to search path
-addpath('./gamma');
+% Declare the Profiler rotation. This factor will adjust how reference data
+% (computed by the TPS) is extracted for the Profiler axes. If the Profiler 
+% is aligned along the TPS axes, set to zero.  If the profiler is rotated
+% 90 degrees such that the Profiler Y axis is aligned to the TPS X axis,
+% set to 90.
+handles.rot = 90;
+Event(sprintf('Profiler rotation set to %0.1f degrees', handles.rot));
 
-% Check if MATLAB can find CalcGamma.m
-if exist('CalcGamma', 'file') ~= 2
+%% Load submodules and toolboxes
+% Add snc_extract submodule to search path
+addpath('./snc_extract');
+
+% Check if MATLAB can find ParseSNCprm
+if exist('ParseSNCprm', 'file') ~= 2
+    
     % If not, throw an error
-    Event(['The CalcGamma submodule does not exist in the search path. Use ', ...
-        'git clone --recursive or git submodule init followed by git ', ...
+    Event(['The snc_extract submodule does not exist in the search path. ', ...
+        'Use git clone --recursive or git submodule init followed by git ', ...
         'submodule update to fetch all submodules'], 'ERROR');
 end
 
-% Load reference profiles
-[handles.refX, handles.refY, handles.refData] = ...
-    LoadReferenceProfiles('AP_27P3X27P3_PlaneDose_Vertical_Isocenter.dcm');
+%% Load reference profiles
+% Declare the Monte Carlo planar reference files exported from the TPS
+handles.references = {
+    './reference/AP_10P5X10P5_PlaneDose_Vertical_Isocenter.dcm'
+    './reference/AP_27P3X27P3_PlaneDose_Vertical_Isocenter.dcm'
+};
+
+% Load and extract reference profiles, rotated by 90 deg
+handles.refdata = ...
+    LoadProfilerDICOMReference(handles.references, handles.rot);
 
 % Update handles structure
 guidata(hObject, handles);
@@ -168,8 +201,7 @@ function h1file_CreateFcn(hObject, ~, ~)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
+% Edit controls usually have a white background on Windows.
 if ispc && isequal(get(hObject,'BackgroundColor'), ...
         get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -181,29 +213,8 @@ function h1browse_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Log event
-Event('H1 browse button selected');
-t = tic;
-
-% Load profile data
-handles = LoadSNCprm(handles, 'h1');
-
-% If data was loaded
-if isfield(handles, 'h1data') && ~isempty(handles.h1data) > 0
-    % Extract X/Y profile data and compute Gamma
-    handles = ParseSNCProfiles(handles, 'h1');
-    
-    % Update statistics table
-    handles = UpdateStatistics(handles, 'h1');
-
-    % Update plot to show MLC X profiles
-    set(handles.h1display, 'Value', 3);
-    handles = UpdateDisplay(handles, 'h1');
-    
-    % Log event
-    Event(sprintf('H1 data loaded successfully in %0.3f seconds', toc(t)));
-    clear t;
-end
+% Execute BrowseCallback to load new data
+handles = BrowseCallback(handles, 'h1');
 
 % Update handles structure
 guidata(hObject, handles);
@@ -215,7 +226,7 @@ function h1display_Callback(hObject, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Log event
-Event('H1 display dropdown changed');
+Event('h1 display dropdown changed');
 
 % Call UpdateDisplay to update plot
 handles = UpdateDisplay(handles, 'h1');
@@ -229,8 +240,7 @@ function h1display_CreateFcn(hObject, ~, ~)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
+% Popupmenu controls usually have a white background on Windows.
 if ispc && isequal(get(hObject,'BackgroundColor'), ...
         get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -242,32 +252,8 @@ function h1clear_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Log event
-Event('H1 clear all button selected');
-
-% Clear data
-handles.h1num = [];
-handles.h1width = [];
-handles.h1bkgdcnt = [];
-handles.h1bkgd = [];
-handles.h1cal = [];
-handles.h1ignore = [];
-handles.h1data = [];
-handles.h1X = [];
-handles.h1Y = [];
-handles.h1T = [];
-
-% Clear file
-set(handles.h1file, 'String', '');
-
-% Call UpdateDisplay to clear plot
-handles = UpdateDisplay(handles, 'h1');
-
-% Clear statistics table
-set(handles.h1table, 'Data', cell(4,2));
-
-% Log event
-Event('H1 data cleared from memory');
+% Execute ClearCallback
+handles = ClearCallback(handles, 'h1');
 
 % Update handles structure
 guidata(hObject, handles);
@@ -284,8 +270,7 @@ function h2file_CreateFcn(hObject, ~, ~)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
+% Edit controls usually have a white background on Windows.
 if ispc && isequal(get(hObject,'BackgroundColor'), ...
         get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -297,29 +282,8 @@ function h2browse_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Log event
-Event('H2 browse button selected');
-t = tic;
-
-% Load profile data
-handles = LoadSNCprm(handles, 'h2');
-
-% If data was loaded
-if isfield(handles, 'h2data') && ~isempty(handles.h2data) > 0
-    % Extract X/Y profile data and compute Gamma
-    handles = ParseSNCProfiles(handles, 'h2');
-    
-    % Update statistics table
-    handles = UpdateStatistics(handles, 'h2');
-
-    % Update plot to show gamma
-    set(handles.h2display, 'Value', 3);
-    handles = UpdateDisplay(handles, 'h2');
-    
-    % Log event
-    Event(sprintf('H2 data loaded successfully in %0.3f seconds', toc(t)));
-    clear t;
-end
+% Execute BrowseCallback to load new data
+handles = BrowseCallback(handles, 'h2');
 
 % Update handles structure
 guidata(hObject, handles);
@@ -331,7 +295,7 @@ function h2display_Callback(hObject, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Log event
-Event('H2 display dropdown changed');
+Event('h2 display dropdown changed');
 
 % Call UpdateDisplay to update plot
 handles = UpdateDisplay(handles, 'h2');
@@ -345,8 +309,7 @@ function h2display_CreateFcn(hObject, ~, ~)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
+% Popupmenu controls usually have a white background on Windows.
 if ispc && isequal(get(hObject,'BackgroundColor'), ...
         get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -358,32 +321,8 @@ function h2clear_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Log event
-Event('H2 clear all button selected');
-
-% Clear data
-handles.h2num = [];
-handles.h2width = [];
-handles.h2bkgdcnt = [];
-handles.h2bkgd = [];
-handles.h2cal = [];
-handles.h2ignore = [];
-handles.h2data = [];
-handles.h2X = [];
-handles.h2Y = [];
-handles.h2T = [];
-
-% Clear file
-set(handles.h2file, 'String', '');
-
-% Call UpdateDisplay to clear plot
-handles = UpdateDisplay(handles, 'h2');
-
-% Clear statistics table
-set(handles.h2table, 'Data', cell(4,2));
-
-% Log event
-Event('H2 data cleared from memory');
+% Execute ClearCallback
+handles = ClearCallback(handles, 'h2');
 
 % Update handles structure
 guidata(hObject, handles);
@@ -400,8 +339,7 @@ function h3file_CreateFcn(hObject, ~, ~)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
+% Edit controls usually have a white background on Windows.
 if ispc && isequal(get(hObject,'BackgroundColor'), ...
         get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -413,29 +351,8 @@ function h3browse_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Log event
-Event('H3 browse button selected');
-t = tic;
-
-% Load profile data
-handles = LoadSNCprm(handles, 'h3');
-
-% If data was loaded
-if isfield(handles, 'h3data') && ~isempty(handles.h3data) > 0
-    % Extract X/Y profile data and compute Gamma
-    handles = ParseSNCProfiles(handles, 'h3');
-    
-    % Update statistics table
-    handles = UpdateStatistics(handles, 'h3');
-
-    % Update plot to show gamma
-    set(handles.h3display, 'Value', 3);
-    handles = UpdateDisplay(handles, 'h3');
-    
-    % Log event
-    Event(sprintf('H1 data loaded successfully in %0.3f seconds', toc(t)));
-    clear t;
-end
+% Execute BrowseCallback to load new data
+handles = BrowseCallback(handles, 'h3');
 
 % Update handles structure
 guidata(hObject, handles);
@@ -447,7 +364,7 @@ function h3display_Callback(hObject, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Log event
-Event('H3 display dropdown changed');
+Event('h3 display dropdown changed');
 
 % Call UpdateDisplay to update plot
 handles = UpdateDisplay(handles, 'h3');
@@ -461,8 +378,7 @@ function h3display_CreateFcn(hObject, ~, ~)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
+% Popupmenu controls usually have a white background on Windows.
 if ispc && isequal(get(hObject,'BackgroundColor'), ...
         get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -474,36 +390,11 @@ function h3clear_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Log event
-Event('H3 clear all button selected');
-
-% Clear data
-handles.h3num = [];
-handles.h3width = [];
-handles.h3bkgdcnt = [];
-handles.h3bkgd = [];
-handles.h3cal = [];
-handles.h3ignore = [];
-handles.h3data = [];
-handles.h3X = [];
-handles.h3Y = [];
-handles.h3T = [];
-
-% Clear file
-set(handles.h3file, 'String', '');
-
-% Call UpdateDisplay to clear plot
-handles = UpdateDisplay(handles, 'h3');
-
-% Clear statistics table
-set(handles.h3table, 'Data', cell(4,2));
-
-% Log event
-Event('H3 data cleared from memory');
+% Execute ClearCallback
+handles = ClearCallback(handles, 'h3');
 
 % Update handles structure
 guidata(hObject, handles);
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function figure1_ResizeFcn(hObject, ~, handles)
@@ -530,3 +421,14 @@ end
 % Clear temporary variables
 clear pos;
     
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function print_button_Callback(~, ~, handles)
+% hObject    handle to print_button (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Log event
+Event('Print button selected');
+
+% Execute PrintReport, passing current handles structure as data
+PrintReport('Data', handles);

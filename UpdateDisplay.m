@@ -8,7 +8,7 @@ function varargout = UpdateDisplay(varargin)
 % display based on the display menu UI component.
 %
 % Author: Mark Geurts, mark.w.geurts@gmail.com
-% Copyright (C) 2014 University of Wisconsin Board of Regents
+% Copyright (C) 2015 University of Wisconsin Board of Regents
 %
 % This program is free software: you can redistribute it and/or modify it 
 % under the terms of the GNU General Public License as published by the  
@@ -29,9 +29,10 @@ try
 % Specify plot options and order
 plotoptions = {
     ''
-    'Reference Profile'
     'MLC X Profile'
     'MLC Y Profile'
+    'Positive Diagonal'
+    'Negative Diagonal'
     'Timing'
 };
 
@@ -72,64 +73,35 @@ set(handles.([head, 'axes']), 'visible', 'off');
 % Execute code block based on display GUI item value
 switch get(handles.([head, 'display']),'Value')
     
-    %% Plot reference dose array
+    %% Plot MLC X profile
     case 2
-        % Log selection
-        Event('Reference Profile selected for display');
-        
-        % If data exists
-        if isfield(handles, 'refData')
-            % Plot transposed reference field
-            imagesc(handles.refData);
-            
-            % Calculate where the x labels should go in order to be
-            % uniformly spaced around zero
-            xlabels = interp1(handles.refX(1,:), ...
-                1:length(handles.refX(1,:)), -200:50:200, 'linear', 'extrap');
-            
-            % Set x ticks and labels
-            set(gca, 'XTick', xlabels);
-            set(gca, 'XTickLabel', -200:50:200);
-            
-            % Calculate where the y labels should go in order to be
-            % uniformly spaced around zero
-            ylabels = sort(interp1(fliplr(handles.refY(1,:)), ...
-                1:length(handles.refY(1,:)), -200:50:200, 'linear', 'extrap'));
-            
-            % Set y ticks and labels
-            set(gca, 'YTick', ylabels);
-            set(gca, 'YTickLabel', -200:50:200);
-            
-            % Turn on grid, color bar, and make image square
-            grid on;
-            colorbar;
-            axis image;
-        end
-    
-    %% Plot MLC X data
-    case 3
         % Log selection
         Event('MLC X Profile selected for display');
         
         % If data exists
-        if isfield(handles, [head,'X']) && ...
-                size(handles.([head,'X']), 2) > 0
+        if isfield(handles, [head,'results']) && ...
+                isfield(handles.([head,'results']), 'ydata') && ...
+                size(handles.([head,'results']).ydata, 2) > 0
             
             % Enable plot hold to overlay multiple plots
             hold on;
             
             % Plot reference data
-            plot(handles.refX(1,:), handles.refX(2,:), 'blue');
+            plot(handles.([head,'refresults']).ydata(1,:)*10, ...
+                handles.([head,'refresults']).ydata(2,:), 'blue');
             
             % Plot measured data
-            plot(handles.([head,'X'])(1,:), handles.([head,'X'])(2,:), 'red');
+            plot(handles.([head,'results']).ydata(1,:)*10, ...
+                handles.([head,'results']).ydata(2,:), 'red');
             
             % Plot gamma
-            plot(handles.([head,'X'])(1,:), handles.([head,'X'])(3,:), ...
+            plot(handles.([head,'results']).ygamma(1,:)*10, ...
+                handles.([head,'results']).ygamma(2,:), ...
                 'Color', [0 0.75 0.75]);
                       
             % Add legend
-            legend('Reference', 'Measured', 'Gamma', 'location', 'SouthEast');
+            legend('Reference', 'Measured', 'Gamma', 'location', ...
+                'SouthEast');
             
             % Format plot
             hold off;
@@ -138,6 +110,7 @@ switch get(handles.([head, 'display']),'Value')
             xlabel('MLC X Position (mm)');
             xlim([-160 160]);
             grid on;
+            box on;
             
             % Turn on display
             set(allchild(handles.([head, 'axes'])), 'visible', 'on'); 
@@ -145,30 +118,35 @@ switch get(handles.([head, 'display']),'Value')
             zoom on;
         end
      
-    %% Plot MLC Y data   
-    case 4
+    %% Plot MLC Y profile   
+    case 3
         % Log selection
         Event('MLC Y Profile selected for display');
         
         % If data exists
-        if isfield(handles, [head,'Y']) && ...
-                size(handles.([head,'Y']), 2) > 0
+        if isfield(handles, [head,'results']) && ...
+                isfield(handles.([head,'results']), 'xdata') && ...
+                size(handles.([head,'results']).xdata, 2) > 0
             
             % Enable plot hold to overlay multiple plots
             hold on;
             
             % Plot reference data
-            plot(handles.refY(1,:), handles.refY(2,:), 'blue');
+            plot(handles.([head,'refresults']).xdata(1,:)*10, ...
+                handles.([head,'refresults']).xdata(2,:), 'blue');
             
             % Plot measured data
-            plot(handles.([head,'Y'])(1,:), handles.([head,'Y'])(2,:), 'red');
+            plot(handles.([head,'results']).xdata(1,:)*10, ...
+                handles.([head,'results']).xdata(2,:), 'red');
             
             % Plot gamma
-            plot(handles.([head,'Y'])(1,:), handles.([head,'Y'])(3,:), ...
+            plot(handles.([head,'results']).xgamma(1,:)*10, ...
+                handles.([head,'results']).xgamma(2,:), ...
                 'Color', [0 0.75 0.75]);
-            
+                      
             % Add legend
-            legend('Reference', 'Measured', 'Gamma', 'location', 'SouthEast');
+            legend('Reference', 'Measured', 'Gamma', 'location', ...
+                'SouthEast');
             
             % Format plot
             hold off;
@@ -177,6 +155,97 @@ switch get(handles.([head, 'display']),'Value')
             xlabel('MLC Y Position (mm)');
             xlim([-160 160]);
             grid on;
+            box on;
+            
+            % Turn on display
+            set(allchild(handles.([head, 'axes'])), 'visible', 'on'); 
+            set(handles.([head, 'axes']), 'visible', 'on'); 
+            zoom on;
+        end
+    
+    %% Plot positive diagonal profile   
+    case 4
+        % Log selection
+        Event('Positive Diagonal Profile selected for display');
+        
+        % If data exists
+        if isfield(handles, [head,'results']) && ...
+                isfield(handles.([head,'results']), 'pdiag') && ...
+                size(handles.([head,'results']).pdiag, 2) > 0
+            
+            % Enable plot hold to overlay multiple plots
+            hold on;
+            
+            % Plot reference data
+            plot(handles.([head,'refresults']).pdiag(1,:)*10, ...
+                handles.([head,'refresults']).pdiag(2,:), 'blue');
+            
+            % Plot measured data
+            plot(handles.([head,'results']).pdiag(1,:)*10, ...
+                handles.([head,'results']).pdiag(2,:), 'red');
+            
+            % Plot gamma
+            plot(handles.([head,'results']).pgamma(1,:)*10, ...
+                handles.([head,'results']).pgamma(2,:), ...
+                'Color', [0 0.75 0.75]);
+                      
+            % Add legend
+            legend('Reference', 'Measured', 'Gamma', 'location', ...
+                'SouthEast');
+            
+            % Format plot
+            hold off;
+            ylabel('Normalized Value');
+            ylim([0 1.05]);
+            xlabel('Positive Diagonal Position (mm)');
+            xlim([-225 225]);
+            grid on;
+            box on;
+            
+            % Turn on display
+            set(allchild(handles.([head, 'axes'])), 'visible', 'on'); 
+            set(handles.([head, 'axes']), 'visible', 'on'); 
+            zoom on;
+        end
+    
+    %% Plot negative diagonal profile  
+    case 5
+        % Log selection
+        Event('Negative Diagonal Profile selected for display');
+        
+        % If data exists
+        if isfield(handles, [head,'results']) && ...
+                isfield(handles.([head,'results']), 'ndiag') && ...
+                size(handles.([head,'results']).ndiag, 2) > 0
+            
+            % Enable plot hold to overlay multiple plots
+            hold on;
+            
+            % Plot reference data
+            plot(handles.([head,'refresults']).ndiag(1,:)*10, ...
+                handles.([head,'refresults']).ndiag(2,:), 'blue');
+            
+            % Plot measured data
+            plot(handles.([head,'results']).ndiag(1,:)*10, ...
+                handles.([head,'results']).ndiag(2,:), 'red');
+            
+            % Plot gamma
+            plot(handles.([head,'results']).ngamma(1,:)*10, ...
+                handles.([head,'results']).ngamma(2,:), ...
+                'Color', [0 0.75 0.75]);
+                      
+            % Add legend
+            legend('Reference', 'Measured', 'Gamma', 'location', ...
+                'SouthEast');
+            
+            % Format plot
+            hold off;
+            ylabel('Normalized Value');
+            ylim([0 1.05]);
+            xlabel('Negative Diagonal Position (mm)');
+            xlim([-225 225]);
+            grid on;
+            box on;
             
             % Turn on display
             set(allchild(handles.([head, 'axes'])), 'visible', 'on'); 
@@ -185,21 +254,24 @@ switch get(handles.([head, 'display']),'Value')
         end
     
     %% Plot time profile
-    case 5
+    case 6
         % Log selection
         Event('Timing Profile selected for display');
         
         % If data exists
-        if isfield(handles, [head,'T']) && ...
-                size(handles.([head,'T']), 2) > 0
+        if isfield(handles, [head,'results']) && ...
+                isfield(handles.([head,'results']), 'ydata') && ...
+                size(handles.([head,'results']).tdata, 2) > 0
             
             % Plot reference data
-            plot(handles.([head,'T'])(1,:), handles.([head,'T'])(2,:), 'blue');
+            plot(handles.([head,'results']).tdata(1,:)/1e3, ...
+                handles.([head,'results']).tdata(2,:), 'blue');
             
             % Format plot
             ylabel('Detector Signal (counts/sec)');
             xlabel('Time (sec)');
             grid on;
+            box on;
             
             % Turn on display
             set(allchild(handles.([head, 'axes'])), 'visible', 'on'); 
