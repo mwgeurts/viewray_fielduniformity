@@ -1,0 +1,95 @@
+<deployment-project plugin="plugin.apptool" plugin-version="1.0">
+  <configuration build-checksum="3336774304" file="/Users/mgeurts/Documents/MATLAB/viewray_fielduniformity/ViewRay Field Uniformity-Timing Check.prj" location="/Users/mgeurts/Documents/MATLAB/viewray_fielduniformity" name="ViewRay Field Uniformity-Timing Check" target="target.mlapps" target-name="Package App">
+    <param.appname>ViewRay Field Uniformity-Timing Check</param.appname>
+    <param.authnamewatermark>Mark Geurts</param.authnamewatermark>
+    <param.email>mark.w.geurts@gmail.com</param.email>
+    <param.company>University of Wisconsin-Madison</param.company>
+    <param.icon />
+    <param.icons />
+    <param.summary>IC Profiler based field uniformity and timing verification for ViewRay systems</param.summary>
+    <param.description>The ViewRay Field Uniformity-Timing Check loads Monte Carlo treatment planning data from the ViewRay™ Treatment Planning System and compares it to measured Sun Nuclear IC Profiler™ data to compare the field uniformity (field size, flatness, symmetry, etc) and evaluate the source positioning and timing accuracy. Because the ViewRay system uses Cobalt-60, variations flatness and symmetry are the result of changes in source shuttling. Beam flatness is computed as the difference in maximum and minimum signal divided by the sum of the maximum and minimum over the central 80% of the field defined by the Full Width Half Maximum (FWHM) along the MLC X and Y central axes. Beam symmetry is computed as the difference in area under the central 80% profile (MLC X or MLC Y) to the right and left of field center, divided by twice the sum of the right and left areas.
+
+When measuring data with IC Profiler, it is assumed that the profiler will be positioned with the electronics pointing toward IEC+Z for a 90 degree gantry angle for 30 seconds of beam on time. The Monte Carlo data assumes that a symmetric 27.3 cm x 27.3 cm is delivered through the front of the IC Profiler. The IC Profiler data must be saved in Multi-Frame format.
+
+IC Profiler is a trademark of Sun Nuclear Corporation. MATLAB® is a registered trademark of MathWorks Inc. ViewRay is a registered trademark of ViewRay Incorporated.</param.description>
+    <param.screenshot>/Users/mgeurts/Desktop/Screen Shot 2015-02-11 at 9.17.10 PM.png</param.screenshot>
+    <param.version>1.1.0</param.version>
+    <param.products.name>
+      <item>MATLAB</item>
+      <item>Image Processing Toolbox</item>
+      <item>Statistics Toolbox</item>
+    </param.products.name>
+    <param.products.id>
+      <item>'1'</item>
+      <item>'17'</item>
+      <item>'19'</item>
+    </param.products.id>
+    <param.products.version>
+      <item>8.4</item>
+      <item>9.1</item>
+      <item>9.1</item>
+    </param.products.version>
+    <param.platforms />
+    <param.output>${PROJECT_ROOT}/ViewRay Field Uniformity-Timing Check.mlappinstall</param.output>
+    <param.guid>91f18aaf-b9c5-4512-9094-087b1dd716f1</param.guid>
+    <unset>
+      <param.authnamewatermark />
+      <param.email />
+      <param.company />
+      <param.icon />
+      <param.icons />
+      <param.platforms />
+    </unset>
+    <fileset.main>
+      <file>${PROJECT_ROOT}/FieldUniformity.m</file>
+    </fileset.main>
+    <fileset.depfun>
+      <file>${MATLAB_ROOT}/toolbox/local/userpath.m</file>
+      <file>${PROJECT_ROOT}/BrowseCallback.m</file>
+      <file>${PROJECT_ROOT}/ClearCallback.m</file>
+      <file>${PROJECT_ROOT}/Event.m</file>
+      <file>${PROJECT_ROOT}/FieldUniformity.fig</file>
+      <file>${PROJECT_ROOT}/LoadVersionInfo.m</file>
+      <file>${PROJECT_ROOT}/PrintReport.fig</file>
+      <file>${PROJECT_ROOT}/PrintReport.m</file>
+      <file>${PROJECT_ROOT}/UpdateDisplay.m</file>
+      <file>${PROJECT_ROOT}/UpdateStatistics.m</file>
+      <file>${PROJECT_ROOT}/reference/AP_10P5X10P5_PlaneDose_Vertical_Isocenter.dcm</file>
+      <file>${PROJECT_ROOT}/reference/AP_27P3X27P3_PlaneDose_Vertical_Isocenter.dcm</file>
+      <file>${PROJECT_ROOT}/snc_extract/AnalyzeProfilerFields.m</file>
+      <file>${PROJECT_ROOT}/snc_extract/LoadProfilerDICOMReference.m</file>
+      <file>${PROJECT_ROOT}/snc_extract/ParseSNCprm.m</file>
+      <file>${PROJECT_ROOT}/snc_extract/gamma/CalcGamma.m</file>
+    </fileset.depfun>
+    <fileset.resources>
+      <file>${PROJECT_ROOT}/README.md</file>
+      <file>${PROJECT_ROOT}/UWCrest_4c.png</file>
+      <file>${PROJECT_ROOT}/license</file>
+      <file>${PROJECT_ROOT}/reference</file>
+    </fileset.resources>
+    <fileset.package />
+    <build-deliverables>
+      <file location="/Users/mgeurts/Documents/MATLAB/viewray_fielduniformity" name="ViewRay Field Uniformity-Timing Check.mlappinstall" optional="false">/Users/mgeurts/Documents/MATLAB/viewray_fielduniformity/ViewRay Field Uniformity-Timing Check.mlappinstall</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>/Applications/MATLAB_R2014b.app</root>
+      <toolboxes />
+    </matlab>
+    <platform>
+      <unix>true</unix>
+      <mac>true</mac>
+      <windows>false</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>10.10.2</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>maci64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>
