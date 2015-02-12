@@ -8,7 +8,7 @@ The ViewRay Field Uniformity-Timing Check loads Monte Carlo treatment planning d
 
 When measuring data with IC Profiler, it is assumed that the profiler will be positioned with the electronics pointing toward IEC+Z for a 90 degree gantry angle for 30 seconds of beam on time. The Monte Carlo data assumes that a symmetric 27.3 cm x 27.3 cm is delivered through the front of the IC Profiler.  The IC Profiler data must be saved in Multi-Frame format.
 
-IC Profiler is a trademark of Sun Nuclear Corporation.  MATLAB&reg; is a registered trademark of MathWorks Inc.  ViewRay is a trademark of ViewRay Incorporated.
+IC Profiler is a trademark of Sun Nuclear Corporation.  MATLAB&reg; is a registered trademark of MathWorks Inc.  ViewRay is a registered trademark of ViewRay Incorporated.
 
 ## Contents
 
