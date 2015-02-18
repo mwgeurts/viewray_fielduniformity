@@ -152,6 +152,10 @@ Event(sprintf('Gamma criteria set to %0.1f%%/%0.1f mm', ...
 handles.rot = 90;
 Event(sprintf('Profiler rotation set to %0.1f degrees', handles.rot));
 
+% Declare unit test flag. This should only be set to 1 if the application
+% is being run as part of unit testing (see UnitTest for more information)
+handles.unitflag = 0;
+
 %% Load submodules and toolboxes
 % Add snc_extract submodule to search path
 addpath('./snc_extract');
