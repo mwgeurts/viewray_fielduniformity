@@ -40,6 +40,7 @@ currentApp = './';
 % Declare prior version directories
 priorApps = {
     '../viewray_fielduniformity-1.0'
+    '../viewray_fielduniformity-1.1.0'
 };
 
 %% Initialize Report
@@ -47,7 +48,7 @@ priorApps = {
 v = regexp(version, '\((.+)\)', 'tokens');
 
 % Open a write file handle to the report
-fid = fopen(fullfile(pwd, strcat(report, '_', v{1}, '.md')), 'wt');
+fid = fopen(char(fullfile(pwd, strcat(report, '_', v{1}, '.md'))), 'wt');
 
 %% Execute Unit Tests
 % Store current working directory
@@ -70,8 +71,8 @@ for i = 1:length(testData)
     results = cell(size(t,1), length(priorApps)+2);
 
     % Store reference tempresults in first and last columns
-    results{:,1} = t{:,1};
-    results{:,length(priorApps)+2} = t{:,2};
+    results(:,1) = t(:,1);
+    results(:,length(priorApps)+2) = t(:,2);
 
     % Loop through each prior version
     for j = 1:length(priorApps)
@@ -86,20 +87,22 @@ for i = 1:length(testData)
         [~, t, ~] = UnitTestWorker(priorApps{j}, testData{i,2}, reference);
 
         % Store prior version results
-        results{:,j+1} = t{:,2};
+        results(:,j+1) = t(:,2);
     end
 
     % Print unit test header
     fprintf(fid, '## %s Unit Test Results', testData{i,1});
     
     % Print preamble
-    fprintf(fid, '%s\n', preamble);
+    for j = 1:length(preamble)
+        fprintf(fid, '%s\n', preamble{j});
+    end
     
     % Loop through each table row
     for j = 1:size(results,1)
         
         % Print table row
-        fprintf(fid, '| %s |', strjoin(results{j,:}, ' | '));
+        fprintf(fid, '| %s |', strjoin(results(j,:), ' | '));
        
         % If this is the first column
         if j == 1
@@ -107,14 +110,17 @@ for i = 1:length(testData)
             % Also print a separator row
             fprintf(fid, '|%s', repmat('----|', 1, size(results,2)));
         end
+        fprintf(fid, '\n');
     end
     
     % Print footnotes
-    fprintf(fid, '%s\n', footnotes);
+    for j = 1:length(footnotes) 
+        fprintf(fid, '%s\n', footnotes{j});
+    end
 end
 
 % Close file handle
-close(fid);
+fclose(fid);
 
 % Clear temporary variables
 clear i j v fid preamble results footnotes reference t;
@@ -164,7 +170,9 @@ footnotes = cell(0,2);
 cd(varargin{1});
 
 % Open application, storing figure handle
+t = tic;
 h = FieldUniformity;
+time = toc(t);
 
 % Retrieve guidata
 data = guidata(h);
@@ -223,12 +231,18 @@ results{size(results,1),2} = sprintf('%i', mess);
 results{size(results,1)+1,1} = 'Cumulative Cyclomatic Complexity';
 results{size(results,1),2} = sprintf('%i', comp);
 
+% Add application load time
+results{size(results,1)+1,1} = 'ApplicationLoad Time<sup>1</sup>';
+results{size(results,1),2} = sprintf('%0.3f sec', time);
+footnotes{length(footnotes)+1} = ['<sup>1</sup>Prior to Version 1.1 ', ...
+    'only one reference profile existed'];
+
 %% Verify reference data load
+% Retrieve guidata
+data = guidata(h);
+    
 % If version >= 1.1.0
 if version >= 010100
-    
-    % Retrieve guidata
-    data = guidata(h);
 
     % Execute LoadProfilerReference in try/catch statement
     try
@@ -252,11 +266,43 @@ results{size(results,1),2} = pf;
 % Add result (with footnote)
 results{size(results,1)+1,1} = 'Reference Data Load Time<sup>1</sup>';
 results{size(results,1),2} = sprintf('%0.3f sec', time);
-footnotes{length(footnotes)+1} = ['<sup>1</sup>In Version 1.0.2 only one', ...
-    ' reference profile existed'];
 
 %% Verify reference profiles are identical
+% Retrieve guidata
+data = guidata(h);
+    
+% If version >= 1.1.0
+if version >= 010100
+    
+    % If reference data exists
+    if nargin == 3
 
+    % If current value equals the reference
+    if isequal(data.refdata, varargin{3}.refdata)
+
+        pf = 'Pass';
+    else
+        pf = 'Fail';
+    end
+
+    % Otherwise, no reference data exists
+    else
+
+        % Set current value as reference
+        reference.refdata = data.refdata;
+
+        % Assume pass
+        pf = 'Pass';
+    end
+    
+% If version < 1.1.0    
+else
+    pf = 'Unknown';
+end
+
+% Add result
+results{size(results,1)+1,1} = 'Reference Data Identical<sup>1</sup>';
+results{size(results,1),2} = pf;
 
 %% Verify PRM data loads in H1
 % Retrieve guidata
@@ -269,7 +315,7 @@ callback = get(data.h1browse, 'Callback');
 
 %% Finish up
 % Close all figures
-close all;
+close all force;
 
 % Store return variables
 varargout{1} = preamble;
