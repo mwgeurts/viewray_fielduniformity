@@ -91,32 +91,35 @@ for i = 1:length(testData)
     end
 
     % Print unit test header
-    fprintf(fid, '## %s Unit Test Results', testData{i,1});
+    fprintf(fid, '## %s Unit Test Results\n\n', testData{i,1});
     
     % Print preamble
     for j = 1:length(preamble)
         fprintf(fid, '%s\n', preamble{j});
     end
+    fprintf(fid, '\n');
     
     % Loop through each table row
     for j = 1:size(results,1)
         
         % Print table row
-        fprintf(fid, '| %s |', strjoin(results(j,:), ' | '));
+        fprintf(fid, '| %s |\n', strjoin(results(j,:), ' | '));
        
         % If this is the first column
         if j == 1
             
             % Also print a separator row
-            fprintf(fid, '|%s', repmat('----|', 1, size(results,2)));
+            fprintf(fid, '|%s\n', repmat('----|', 1, size(results,2)));
         end
-        fprintf(fid, '\n');
+
     end
+    fprintf(fid, '\n');
     
     % Print footnotes
     for j = 1:length(footnotes) 
         fprintf(fid, '%s\n', footnotes{j});
     end
+    fprintf(fid, '\n');
 end
 
 % Close file handle
@@ -184,6 +187,10 @@ data.unitflag = 1;
 c = regexp(data.version, '^([0-9]+)\.([0-9]+)\.*([0-9]*)', 'tokens');
 version = str2double(c{1}{1})*10000 + str2double(c{1}{2})*100 + ...
     max(str2double(c{1}{3}),0);
+
+% Add version to results
+results{size(results,1)+1,1} = 'Test';
+results{size(results,1),2} = sprintf('Version %s', data.version);
 
 % Update guidata
 guidata(h, data); 
@@ -294,6 +301,10 @@ if version >= 010100
         % Assume pass
         pf = 'Pass';
     end
+    
+    % Add reference profiles to preamble
+    preamble{length(preamble)+1} = ['| Reference Data | ', ...
+        data.references{1}, ' ', strjoin(data.references(2:end), ' '), ' |'];
     
 % If version < 1.1.0    
 else
