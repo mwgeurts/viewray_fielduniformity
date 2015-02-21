@@ -1,7 +1,7 @@
-function UnitTest()
-% UnitTest is a function that automatically runs a series of unit tests on
-% the most current and previous versions of this application.  The unit
-% test results are written to a GitHub Flavored Markdown text file 
+function UnitTestHarness()
+% UnitTestHarness is a function that automatically runs a series of unit 
+% tests on the most current and previous versions of this application.  The 
+% unit test results are written to a GitHub Flavored Markdown text file 
 % specified in the first line of this function below.  Also declared is the 
 % location of any test data necessary to run the unit tests and locations 
 % of the most recent and previous application vesion source code.
@@ -25,7 +25,7 @@ function UnitTest()
 %% Declare Runtime Variables
 % Declare name of report file (will be appended by _R201XX.md based on 
 % MATLAB version)
-report = 'unit_test_report';
+report = './test_reports/unit_test';
 
 % Declare location of test data. Column 1 is the name of the 
 % test suite, column 2 is the absolute path to the file(s)
@@ -65,7 +65,7 @@ for i = 1:length(testData)
     
     % Execute unit test of current/reference version
     [preamble, t, footnotes, reference] = ...
-        UnitTestWorker(currentApp, testData{i,2});
+        UnitTest(currentApp, testData{i,2});
 
     % Pre-allocate results cell array
     results = cell(size(t,1), length(priorApps)+2);
@@ -84,14 +84,14 @@ for i = 1:length(testData)
         cd(cwd);
         
         % Execute unit test on prior version
-        [~, t, ~] = UnitTestWorker(priorApps{j}, testData{i,2}, reference);
+        [~, t, ~] = UnitTest(priorApps{j}, testData{i,2}, reference);
 
         % Store prior version results
         results(:,j+1) = t(:,2);
     end
 
     % Print unit test header
-    fprintf(fid, '## %s Unit Test Results\n\n', testData{i,1});
+    fprintf(fid, '## %s Test Suite Results\n\n', testData{i,1});
     
     % Print preamble
     for j = 1:length(preamble)
@@ -130,9 +130,9 @@ clear i j v fid preamble results footnotes reference t;
 
 end
 
-function varargout = UnitTestWorker(varargin)
-% UnitTestWorker is a subfunction of UnitTest and is what actually executes
-% the unit test for each software version.  Either two or three input
+function varargout = UnitTest(varargin)
+% UnitTest is a subfunction of UnitTestHarness and is what really executes 
+% the unit test cases for each software version.  Either two or three input
 % arguments can be passed to UnitTestWorker, as described below.
 %
 % The following variables are required for proper execution: 
@@ -154,9 +154,10 @@ function varargout = UnitTestWorker(varargin)
 %       results table in the report.
 %   varargout{4} (optional): structure containing reference data created by 
 %       executing this version.  This structure can be passed back into 
-%       subsequent executions of UnitTestWorker as varargin{3}.
+%       subsequent executions of UnitTestWorker as varargin{3} to compare
+%       results between versions.
 
-%% Start Unit Test
+%% Start Unit Testing
 % Initialize preamble text
 preamble = {
     '| Input Data | Value |'
@@ -189,7 +190,7 @@ version = str2double(c{1}{1})*10000 + str2double(c{1}{2})*100 + ...
     max(str2double(c{1}{3}),0);
 
 % Add version to results
-results{size(results,1)+1,1} = 'Test';
+results{size(results,1)+1,1} = 'Test Case';
 results{size(results,1),2} = sprintf('Version %s', data.version);
 
 % Update guidata
@@ -231,7 +232,7 @@ for i = 1:length(fList)
 end
 
 % Add code analyzer messages counter to results
-results{size(results,1)+1,1} = 'Code Analyzer Warnings';
+results{size(results,1)+1,1} = 'Code Analyzer Messages';
 results{size(results,1),2} = sprintf('%i', mess);
 
 % Add complexity results
@@ -239,7 +240,7 @@ results{size(results,1)+1,1} = 'Cumulative Cyclomatic Complexity';
 results{size(results,1),2} = sprintf('%i', comp);
 
 % Add application load time
-results{size(results,1)+1,1} = 'ApplicationLoad Time<sup>1</sup>';
+results{size(results,1)+1,1} = 'Application Load Time<sup>1</sup>';
 results{size(results,1),2} = sprintf('%0.3f sec', time);
 footnotes{length(footnotes)+1} = ['<sup>1</sup>Prior to Version 1.1 ', ...
     'only one reference profile existed'];
