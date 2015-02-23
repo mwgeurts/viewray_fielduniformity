@@ -373,13 +373,13 @@ if version >= 010100
     % If reference data exists
     if nargin == 3
 
-    % If current value equals the reference
-    if isequal(data.refdata, varargin{3}.refdata)
+        % If current value equals the reference
+        if isequal(data.refdata, varargin{3}.refdata)
 
-        pf = pass;
-    else
-        pf = fail;
-    end
+            pf = pass;
+        else
+            pf = fail;
+        end
 
     % Otherwise, no reference data exists
     else
@@ -397,7 +397,32 @@ if version >= 010100
     
 % If version < 1.1.0    
 else
-    pf = unk;
+    % If reference data exists
+    if nargin == 3
+
+        % Interpolate data.refX to varargin{3}.refdata.xdata(1)
+        tempX = interp1(data.refX(1,:)/10, data.refX(2,:), ...
+            varargin{3}.refdata.xdata(1,:), 'linear');
+        
+        % If the interpolated data matches the reference data
+        if max(abs(varargin{3}.refdata.xdata(3,:)/...
+                max(varargin{3}.refdata.xdata(3,:)) - ...
+                tempX/max(tempX))) < 0.05
+
+            pf = pass;
+        else
+            pf = fail;
+        end
+
+    % Otherwise, no reference data exists
+    else
+
+        % Set current value as reference
+        reference.refdata = data.refData;
+
+        % Assume pass
+        pf = pass;
+    end
 end
 
 % Add result
