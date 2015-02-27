@@ -91,7 +91,7 @@ info = cpuinfo();
 fprintf(fid, '| Operating System | %s %s |\n', info.OSType, info.OSVersion);
 fprintf(fid, '| Processor | %s |\n', info.Name);
 fprintf(fid, '| Frequency | %s |\n', info.Clock);
-fprintf(fid, '| Number of Cores | %s |\n', info.NumProcessors);
+fprintf(fid, '| Number of Cores | %i |\n', info.NumProcessors);
 fprintf(fid, '| L2 Cache (per core) | %s |\n', info.Cache);
 
 % Retrieve memory info
