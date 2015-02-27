@@ -23,6 +23,10 @@ function UnitTestHarness()
 % with this program. If not, see http://www.gnu.org/licenses/.
 
 %% Declare Runtime Variables
+% Log start
+Event('Beginning unit test harness', 'UNIT');
+time = tic;
+
 % Declare name of report file (will be appended by _R201XX.md based on 
 % MATLAB version)
 report = './test_reports/unit_test';
@@ -31,7 +35,7 @@ report = './test_reports/unit_test';
 % test suite, column 2 is the absolute path to the file(s)
 testData = {
     '27.3cm'     './test_data/Head1_G90_27p3.prm'
-    '10.5cm'     './test_data/Head3_G90_10p5.prm'
+%    '10.5cm'     './test_data/Head3_G90_10p5.prm'
 };
 
 % Declare current version directory
@@ -43,14 +47,29 @@ priorApps = {
     '../viewray_fielduniformity-1.1.0'
 };
 
+%% Load submodules and toolboxes
+% Add snc_extract submodule to search path
+addpath('./snc_extract/gamma');
+
+% Check if MATLAB can find CalcGamma
+if exist('CalcGamma', 'file') ~= 2
+    
+    % If not, throw an error
+    Event('The snc_extract/gamma submodule does not exist in the path.', ...
+        'ERROR');
+end
+
 %% Initialize Report
 % Retrieve MATLAB version
 v = regexp(version, '\((.+)\)', 'tokens');
 
 % Open a write file handle to the report
+Event(['Initializing report file ', ...
+    char(fullfile(pwd, strcat(report, '_', v{1}, '.md')))], 'UNIT');
 fid = fopen(char(fullfile(pwd, strcat(report, '_', v{1}, '.md'))), 'wt');
 
 % Write introduction
+Event('Writing introduction', 'UNIT');
 fprintf(fid, ['The principal features of the ViewRay Field Uniformity-', ...
     'Timing Check tool have been tested between versions for a set of test', ...
     'cases to determine if regressions have been introduced which may ', ...
@@ -60,10 +79,12 @@ fprintf(fid, ['The principal features of the ViewRay Field Uniformity-', ...
     'following system configuration.\n\n']);
 
 % Start table containing test configuration
+Event('Writing test system configuration', 'UNIT');
 fprintf(fid, '| Specification | Test System Configuration |\n');
 fprintf(fid, '|--|--|\n');
 
 % Retrieve CPU info
+Event('Retrieving test system CPU status', 'UNIT');
 info = cpuinfo();
 
 % Write processor information
@@ -74,12 +95,15 @@ fprintf(fid, '| Number of Cores | %s |\n', info.NumProcessors);
 fprintf(fid, '| L2 Cache (per core) | %s |\n', info.Cache);
 
 % Retrieve memory info
+Event('Retrieving test system memory status', 'UNIT');
 info = meminfo();
 
 % Write memory information
 fprintf(fid, '| Memory | %0.2f GB (%0.2f GB available) |\n', ...
     info.Total/1024^3, info.Unused/1024^3);
 
+% Test for GPU
+Event('Retrieving compatible GPU status', 'UNIT');
 try 
     % Store GPU information to temporary variable
     g = gpuDevice(1);
@@ -99,6 +123,7 @@ catch
     fprintf(fid, '| CUDA Version | |\n');
 end
 
+% Write MATLAB version
 fprintf(fid, '| MATLAB Version | %s |\n', v{1}{1});
 fprintf(fid, '\n');
 
@@ -106,6 +131,7 @@ fprintf(fid, '\n');
 clear info;
 
 % Write remainder of introduction
+Event('Writing unit test summary', 'UNIT');
 fprintf(fid, ['Unit testing was performed using an automated test harness ', ...
     'developed to test each application component and, where relevant, ', ...
     'compare the results to pre-validated reference data.  Refer to the ', ...
@@ -115,19 +141,34 @@ fprintf(fid, ['Unit testing was performed using an automated test harness ', ...
 %% Execute Unit Tests
 % Store current working directory
 cwd = pwd;
+Event(['Unit test harness working directory is ', cwd], 'UNIT');
+
+% Start profiler
+profile off;
+profile on -history;
+S = profile('status');
+Event(sprintf(['MATLAB profiler initialized\nStatus: %s\n', ...
+    'Detail level: %s\nTimer: %s\nHistory tracking: %s\nHistory size: %i'], ...
+    S.ProfilerStatus, S.DetailLevel, S.Timer, S.HistoryTracking, ...
+    S.HistorySize), 'UNIT');
+clear S;
 
 % Loop through each test case
-for i = 1:length(testData)
+for i = 1:size(testData, 1)
     
     % Restore default search path
+    Event('Restoring MATLAB default path', 'UNIT');
     restoredefaultpath;
 
     % Restore current directory
+    Event('Reverting to unit test working directory', 'UNIT');
     cd(cwd);
     
     % Execute unit test of current/reference version
+    Event(sprintf(['Executing UnitTest(%s) with test dataset %i and ', ...
+        'collecting reference'], fullfile(cwd, currentApp), i), 'UNIT');
     [preamble, t, footnotes, reference] = ...
-        UnitTest(currentApp, testData{i,2});
+        UnitTest(fullfile(cwd, currentApp), fullfile(cwd, testData{i,2}));
 
     % Pre-allocate results cell array
     results = cell(size(t,1), length(priorApps)+3);
@@ -141,13 +182,18 @@ for i = 1:length(testData)
     for j = 1:length(priorApps)
 
         % Restore default search path
+        Event('Restoring MATLAB default path', 'UNIT');
         restoredefaultpath;
         
         % Restore current directory
+        Event('Reverting to unit test working directory', 'UNIT');
         cd(cwd);
         
         % Execute unit test on prior version
-        [~, t, ~] = UnitTest(priorApps{j}, testData{i,2}, reference);
+        Event(sprintf('Executing UnitTest(%s) with test dataset %i', ...
+            fullfile(cwd, priorApps{j}), i), 'UNIT');
+        [~, t, ~] = UnitTest(fullfile(cwd, priorApps{j}), ...
+            fullfile(cwd, testData{i,2}), reference);
 
         % Store prior version results
         results(:,j+2) = t(:,3);
@@ -157,15 +203,18 @@ for i = 1:length(testData)
     end
 
     % Print unit test header
+    Event(sprintf('Writing test suite results for dataset %i', i), 'UNIT');
     fprintf(fid, '## %s Test Suite Results\n\n', testData{i,1});
     
     % Print preamble
+    Event('Writing test suite preamble', 'UNIT');
     for j = 1:length(preamble)
         fprintf(fid, '%s\n', preamble{j});
     end
     fprintf(fid, '\n');
     
     % Loop through each table row
+    Event('Writing test suite results table', 'UNIT');
     for j = 1:size(results,1)
         
         % Print table row
@@ -182,17 +231,201 @@ for i = 1:length(testData)
     fprintf(fid, '\n');
     
     % Print footnotes
+    Event('Writing test suite footnotes', 'UNIT');
     for j = 1:length(footnotes) 
         fprintf(fid, '%s\n', footnotes{j});
     end
     fprintf(fid, '\n');
 end
 
+% Stop profiler
+stats = profile('info');
+Event(sprintf(['Stopping and retrieving MATLAB profiler status\n', ...
+    'Functions profiled: %i'], size(stats.FunctionTable, 1)), 'UNIT');
+
+% Initialize file list with currentApp
+fList = cell(0);
+f = matlab.codetools.requiredFilesAndProducts(...
+    fullfile(cwd, currentApp, 'FieldUniformity.m'));
+Event(sprintf('%i required functions identified in %s', length(f), ...
+    fullfile(cwd, currentApp)), 'UNIT');
+
+% Loop through files, saving file names
+for i = 1:length(f)
+    
+    % Retrieve file name
+    [~, name, ~] = fileparts(f{i});
+    
+    % If file is within currentApp
+    if strncmp(fullfile(cwd, currentApp), f{j}, ...
+            length(fullfile(cwd, currentApp)))
+    
+        % Store file name
+        fList{length(fList)+1} = name;
+    end
+end
+
+% Loop through priorApps
+for i = 1:length(priorApps)
+
+    % Retrieve priorApp file list
+    f = matlab.codetools.requiredFilesAndProducts(...
+        fullfile(cwd, priorApps{i}, 'FieldUniformity.m'));
+    Event(sprintf('%i required functions identified in %s', length(f), ...
+        fullfile(cwd, priorApps{i})), 'UNIT');
+
+    % Loop through files, saving file names
+    for j = 1:length(f)
+        
+        % Retrieve file name
+        [~, name, ~] = fileparts(f{j});
+       
+        % If file is within priorApps
+        if strncmp(fullfile(cwd, priorApps{i}), f{j}, ...
+                length(fullfile(cwd, priorApps{i})))
+        
+            % Store file name
+            fList{length(fList)+1} = name;
+        end
+    end
+end
+
+% Remove duplicates
+fList = unique(fList);
+Event(sprintf('%i unique functions identified', length(fList)), 'UNIT');
+
+% Sort array
+fList = sort(fList);
+
+% Initialize code coverage table
+Event('Computing code coverage', 'UNIT');
+executed = zeros(length(fList), size(results, 2)-2);
+total = zeros(length(fList), size(results, 2)-2);
+
+% Loop through FunctionTable
+for i = 1:size(stats.FunctionTable, 1)
+    
+    % Initialize column and row indices
+    c = 0;
+    
+    % Extract the filename
+    [~, name, ~] = fileparts(stats.FunctionTable(i).FileName);
+        
+    % If the filename is this file, skip it
+    if strcmp(name, 'UnitTestHarness'); continue; end
+    
+    % If FileName is within the currentApp
+    if strncmp(fullfile(cwd, currentApp), stats.FunctionTable(i).FileName, ...
+            length(fullfile(cwd, currentApp)))
+        
+        % Set column index
+        c = size(executed, 2);
+    else
+        % Loop through priorApps
+        for j = 1:length(priorApps)
+            
+            % If FileName is within priorApps
+            if strncmp(fullfile(cwd, priorApps{j}), ...
+                    stats.FunctionTable(i).FileName, ...
+                    length(fullfile(cwd, priorApps{j})))
+                
+                % Set column index and end for loop
+                c = j;
+                break;
+            end
+        end
+    end
+    
+    % If the column index was set
+    if c > 0
+        
+        % Loop through the file list
+        for j = 1:length(fList)
+           
+            % If the current file already exists in the list (this will 
+            % happen for subfunctions) or the file list is empty (the file
+            % was not found)
+            if strcmp(fList{j}, name) || isempty(fList{j})
+                
+                % Update files cell array
+                fList{j} = name;
+                
+                % Add the number of executed lines
+                executed(j, c) = executed(j, c) + ...
+                    size(stats.FunctionTable(i).ExecutedLines, 1);
+                
+                % If the total number of lines has not been computed yet
+                if total(j, c) == 0
+                    total(j, c) = sloc(stats.FunctionTable(i).FileName);
+                    Event(sprintf('Total line count for %s computed as %i', ...
+                        stats.FunctionTable(i).FileName, total(j, c)), ...
+                        'UNIT');
+                end
+                
+                % Break from the loop
+                break;
+            end
+        end
+    end
+end
+
+% Print code coverage header
+Event('Writing code coverage results', 'UNIT');
+fprintf(fid, '## Code Coverage\n\n');
+
+% Print table header row
+fprintf(fid, '| Function |');
+fprintf(fid, ' %s |', results{1, 3:end});
+fprintf(fid, '\n');
+
+% Print a separator row
+fprintf(fid, '|%s', repmat('----|', 1, size(results,2)-1));
+
+% Loop through each file
+for i = 1:length(fList)
+    
+    % If a file name exists
+    if ~isempty(fList{i})
+       
+        % Write the file name
+        fprintf(fid, '\n| %s |', fList{i});
+        
+        % Loop through the results
+        for j = 1:size(executed, 2)
+            
+            % If the total number of lines were computed
+            if total(i,j) > 0
+                
+                % Printf the coverage
+                fprintf(fid, ' %0.1f%% |', executed(i,j)/total(i,j) * 100);
+            else
+                
+                % Otherwise, print an empty cell
+                fprintf(fid, '   |');
+            end
+        end
+    end
+end
+
 % Close file handle
 fclose(fid);
 
+% Save profiler results to HTML file
+% [path, ~, ~] = fileparts(char(fullfile(cwd, report)));
+% Event(['Saving profiler results to ', path]);
+% profsave(stats, path);
+
+% Restore current directory
+Event('Reverting to unit test working directory', 'UNIT');
+cd(cwd);
+
+% Log completion and time
+Event(sprintf('Unit test harness completed successfully in %0.1f minutes', ...
+    toc(time)/60), 'UNIT');
+
 % Clear temporary variables
-clear i j v fid preamble results footnotes reference;
+clear c i j v f t fid fList preamble results footnotes reference cwd ...
+    executed total name currentApp priorApps report stats testData time;
 
 end
 
@@ -227,7 +460,7 @@ function varargout = UnitTest(varargin)
 % Initialize static test result text variables
 pass = 'Pass';
 fail = 'Fail';
-unk = 'Unknown';
+unk = 'N/A';
 
 %% Start Unit Testing
 % Initialize preamble text
@@ -242,6 +475,7 @@ results = cell(0,3);
 % Initialize footnotes cell array
 footnotes = cell(0,1);
 
+%% TEST 1: Application Load Time
 % Change to directory of version being tested
 cd(varargin{1});
 
@@ -267,9 +501,9 @@ results{size(results,1),2} = 'Test Case';
 results{size(results,1),3} = sprintf('Version %s', data.version);
 
 % Update guidata
-guidata(h, data); 
+guidata(h, data);
 
-%% Application Complexity
+%% TEST 2/3: Code Analyzer Messages, Cumulative Cyclomatic Complexity
 fList = matlab.codetools.requiredFilesAndProducts('FieldUniformity.m');
 
 % Initialize complexity and messages counters
@@ -297,8 +531,16 @@ for i = 1:length(fList)
             
         else
             
-            % Add as code analyzer message
-            mess = mess + 1;
+            % If not an invalid code message
+            if ~strncmp(inform(j).message, 'Filename', 8)
+                
+                % Log message
+                Event(sprintf('%s in %s', inform(j).message, fList{i}), ...
+                    'CHCK');
+
+                % Add as code analyzer message
+                mess = mess + 1;
+            end
         end
         
     end
@@ -319,9 +561,9 @@ results{size(results,1)+1,1} = '3';
 results{size(results,1),2} = 'Application Load Time<sup>1</sup>';
 results{size(results,1),3} = sprintf('%0.3f sec', time);
 footnotes{length(footnotes)+1} = ['<sup>1</sup>Prior to Version 1.1 ', ...
-    'only one reference profile existed'];
+    'only the 27.3 cm x 27.3 cm reference profile existed'];
 
-%% Verify reference data load
+%% TEST 4/5: Reference Data Loads Successfully, Load Time
 % Retrieve guidata
 data = guidata(h);
     
@@ -334,8 +576,12 @@ if version >= 010100
         pf = pass;
         LoadProfilerDICOMReference(data.references, '90');
     catch
+        
+        % If it errors, record fail
         pf = fail;
     end
+    
+    % Record completion time
     time = toc(t);
     
 % If version < 1.1.0    
@@ -348,8 +594,12 @@ else
         LoadReferenceProfiles(...
             'AP_27P3X27P3_PlaneDose_Vertical_Isocenter.dcm');
     catch
+        
+        % If it errors, record fail
         pf = fail;
     end
+    
+    % Record completion time
     time = toc(t);
 end
 
@@ -363,7 +613,7 @@ results{size(results,1)+1,1} = '5';
 results{size(results,1),2} = 'Reference Data Load Time<sup>1</sup>';
 results{size(results,1),3} = sprintf('%0.3f sec', time);
 
-%% Verify reference profiles are identical
+%% TEST 6/7: Reference Data Identical
 % Retrieve guidata
 data = guidata(h);
     
@@ -376,9 +626,14 @@ if version >= 010100
         % If current value equals the reference
         if isequal(data.refdata, varargin{3}.refdata)
 
-            pf = pass;
+            % Record pass
+            xpf = pass;
+            ypf = pass;
         else
-            pf = fail;
+            
+            % Record fail
+            xpf = fail;
+            ypf = pass;
         end
 
     % Otherwise, no reference data exists
@@ -388,29 +643,144 @@ if version >= 010100
         reference.refdata = data.refdata;
 
         % Assume pass
-        pf = pass;
+        xpf = pass;
+        ypf = pass;
+
+        % Add reference profiles to preamble
+        preamble{length(preamble)+1} = ['| Reference Data | ', ...
+            data.references{1}, ' ', strjoin(data.references(2:end), ' '), ...
+            ' |'];
     end
-    
-    % Add reference profiles to preamble
-    preamble{length(preamble)+1} = ['| Reference Data | ', ...
-        data.references{1}, ' ', strjoin(data.references(2:end), ' '), ' |'];
     
 % If version < 1.1.0    
 else
+    
     % If reference data exists
     if nargin == 3
 
-        % Interpolate data.refX to varargin{3}.refdata.xdata(1)
-        tempX = interp1(data.refX(1,:)/10, data.refX(2,:), ...
-            varargin{3}.refdata.xdata(1,:), 'linear');
-        
-        % If the interpolated data matches the reference data
-        if max(abs(varargin{3}.refdata.xdata(3,:)/...
-                max(varargin{3}.refdata.xdata(3,:)) - ...
-                tempX/max(tempX))) < 0.05
+        % Compute MLC X gamma using 1%/0.1 mm and global method
+        target.start = data.refX(1,1)/10;
+        target.width = (data.refX(1,2)-data.refX(1,1))/10;
+        target.data = data.refX(2,:)/max(data.refX(2,:));
+        ref.start = varargin{3}.refdata.ydata(1,1);
+        ref.width = varargin{3}.refdata.ydata(1,2) - ...
+            varargin{3}.refdata.ydata(1,1);
+        ref.data = varargin{3}.refdata.ydata(3,:)/...
+            max(varargin{3}.refdata.ydata(3,:));
+        gamma = CalcGamma(ref, target, 1, 0.01, 0);
 
+        % If the gamma rate is less than one
+        if max(gamma) < 1
+
+            % Record pass
+            xpf = pass;
+        else
+            
+            % Record fail
+            xpf = fail;
+        end
+
+        % Compute MLC Y gamma using 1%/0.1 mm and global method
+        target.start = data.refY(1,1)/10;
+        target.width = (data.refY(1,2)-data.refY(1,1))/10;
+        target.data = data.refY(2,:)/max(data.refY(2,:));
+        ref.start = varargin{3}.refdata.xdata(1,1);
+        ref.width = varargin{3}.refdata.xdata(1,2) - ...
+            varargin{3}.refdata.xdata(1,1);
+        ref.data = varargin{3}.refdata.xdata(3,:)/...
+            max(varargin{3}.refdata.xdata(3,:));
+        gamma = CalcGamma(ref, target, 1, 0.01, 0);
+
+        % If the gamma rate is less than one
+        if max(gamma) < 1
+
+            % Record pass
+            ypf = pass;
+        else
+            
+            % Record fail
+            ypf = fail;
+        end
+
+    % Otherwise, no reference data exists
+    else
+        xpf = unk;
+        ypf = unk;
+    end
+end
+
+% Add result
+results{size(results,1)+1,1} = '6';
+results{size(results,1),2} = 'Reference MLC X Data within 1%/0.1 mm';
+results{size(results,1),3} = xpf;
+
+% Add result with footnote
+results{size(results,1)+1,1} = '7';
+results{size(results,1),2} = 'Reference MLC Y Data within 1%/0.1 mm<sup>2</sup>';
+results{size(results,1),3} = ypf;
+footnotes{length(footnotes)+1} = ['<sup>2</sup>In version 1.0 a bug was ', ...
+    'present where MLC Y T&G effect was not accounted for in the ', ...
+    'reference data'];
+
+
+%% TEST 8/9: H1 Browse Loads Data Successfully/Load Time
+% Retrieve guidata
+data = guidata(h);
+    
+% Retrieve callback to H1 browse button
+callback = get(data.h1browse, 'Callback');
+
+% Set unit path/name
+[path, name, ext] = fileparts(varargin{2});
+data.unitpath = path;
+data.unitname = [name, ext];
+
+% Store guidata
+guidata(h, data);
+
+% Execute callback in try/catch statement
+try
+    t = tic;
+    pf = pass;
+    callback(data.h1browse, data);
+catch
+
+    % If it errors, record fail
+    pf = fail;
+end
+
+% Record completion time
+time = toc(t);
+
+% Add result
+results{size(results,1)+1,1} = '8';
+results{size(results,1),2} = 'H1 Browse Loads Data Successfully';
+results{size(results,1),3} = pf;
+
+% Add result
+results{size(results,1)+1,1} = '9';
+results{size(results,1),2} = 'Browse Callback Load Time';
+results{size(results,1),3} = sprintf('%0.3f sec', time);
+
+%% TEST 10: MLC X Profile Identical
+% Retrieve guidata
+data = guidata(h);
+
+% If version >= 1.1.0
+if version >= 010100
+
+    % If reference data exists
+    if nargin == 3
+
+        % If current value equals the reference
+        if isequal(data.h1results.ydata(1,:), varargin{3}.ydata(1,:)) && ...
+                isequal(data.h1results.ydata(2,:), varargin{3}.ydata(2,:))
+
+            % Record pass
             pf = pass;
         else
+
+            % Record fail
             pf = fail;
         end
 
@@ -418,25 +788,105 @@ else
     else
 
         % Set current value as reference
-        reference.refdata = data.refData;
+        reference.ydata = data.h1results.ydata;
 
         % Assume pass
         pf = pass;
+
+        % Add test data to preamble
+        preamble{length(preamble)+1} = sprintf('| Measured Data | %s |', ...
+            data.unitname);
+    end
+
+% If version < 1.1.0    
+else
+
+    % If reference data exists
+    if nargin == 3
+
+        % If current value equals the reference to within 0.1%
+        if isequal(data.h1X(1,:)/10, varargin{3}.ydata(1,:)) && ...
+                max(abs(data.h1X(2,:) - varargin{3}.ydata(2,:))) < 0.001
+
+            % Record pass
+            pf = pass;
+        else
+
+            % Record fail
+            pf = fail;
+        end
+
+    % Otherwise, no reference data exists
+    else
+        pf = unk;
     end
 end
 
 % Add result
-results{size(results,1)+1,1} = '6';
-results{size(results,1),2} = 'Reference Data Identical<sup>1</sup>';
+results{size(results,1)+1,1} = '10';
+results{size(results,1),2} = 'MLC X Profile within 0.1%';
 results{size(results,1),3} = pf;
 
-%% Verify PRM data loads in H1
+%% TEST 11: MLC Y Profile Identical
 % Retrieve guidata
 data = guidata(h);
-    
-% Retrieve callback to H1 browse button
-callback = get(data.h1browse, 'Callback');
 
+% If version >= 1.1.0
+if version >= 010100
+
+    % If reference data exists
+    if nargin == 3
+
+        % If current value equals the reference
+        if isequal(data.h1results.xdata(1,:), varargin{3}.xdata(1,:)) && ...
+                isequal(data.h1results.xdata(2,:), varargin{3}.xdata(2,:))
+
+            % Record pass
+            pf = pass;
+        else
+
+            % Record fail
+            pf = fail;
+        end
+
+    % Otherwise, no reference data exists
+    else
+
+        % Set current value as reference
+        reference.xdata = data.h1results.xdata;
+
+        % Assume pass
+        pf = pass;
+    end
+
+% If version < 1.1.0    
+else
+
+    % If reference data exists
+    if nargin == 3
+
+        % If current value equals the reference to within 0.1%
+        if isequal(data.h1Y(1,:)/10, varargin{3}.xdata(1,:)) && ...
+                max(abs(data.h1Y(2,:) - varargin{3}.xdata(2,:))) < 0.001
+
+            % Record pass
+            pf = pass;
+        else
+
+            % Record fail
+            pf = fail;
+        end
+
+    % Otherwise, no reference data exists
+    else
+        pf = unk;
+    end
+end
+
+% Add result
+results{size(results,1)+1,1} = '11';
+results{size(results,1),2} = 'MLC Y Profile within 0.1%';
+results{size(results,1),3} = pf;
 
 
 %% Finish up
@@ -740,5 +1190,114 @@ out = onCleanup( @() fclose( fid ) );
 
 txt = textscan( fid, '%s', 'Delimiter', '\n' );
 txt = txt{1};
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function sl = sloc(file)
+%SLOC Counts number source lines of code.
+%   SL = SLOC(FILE) returns the line count for FILE.  If there are multiple
+%   functions in one file, subfunctions are not counted separately, but
+%   rather together.
+%
+%   The following lines are not counted as a line of code:
+%   (1) The "function" line
+%   (2) A line that is continued from the previous line --> ...
+%   (3) A comment line, a line that starts with --> % or a line that is
+%       part of a block comment (   %{...%}   )
+%   (4) A blank line
+%
+%   Note: If more than one statement is on the line, it counts that as one
+%   line of code.  For instance the following:
+%
+%        minx = 32; maxx = 100;
+%
+%   is considered to be one line of code.  Also, if the creation of a
+%   matrix is continued onto several line without the use of '...', SLOC
+%   will deem that as separate lines of code.  Using '...' will "tie" the
+%   lines together.
+%
+%   Example:
+%   ========
+%      sl = sloc('sloc')
+%      sl =
+%                41
+
+%   Copyright 2004-2005 MathWorks, Inc.
+%   Raymond S. Norris (rayn@mathworks.com)
+%   $Revision: 1.4 $ $Date: 2006/03/08 19:50:30 $
+
+if nargin==0
+   help(mfilename)
+   return
+end
+
+% Check to see if the ".m" is missing from the M-file name
+file = deblank(file);
+if length(file)<3 || ~strcmp(file(end-1:end),'.m')
+   file = [file '.m'];
+end
+
+fid = fopen(file,'r');
+if fid<0
+   disp(['Failed to open ''' file ''' for reading.'])
+   return
+end
+
+sl = 0;
+done = false;
+previous_line = '-99999';
+
+v = ver('matlab');
+atLeastR14 = datenum(v.Date)>=732519;
+
+inblockcomment = false;
+
+while done==false
+
+   % Get the next line
+   m_line = fgetl(fid);
+
+   % If line is -1, we've reached the end of the file
+   if m_line==-1
+      break
+   end
+
+   % The Profiler doesn't include the "function" line of a function, so
+   % skip it.  Because nested functions may be indented, trim the front of
+   % the line of code.  Since we are string trimming the line, we may as 
+   % well check here if the resulting string it empty.  If any of the above
+   % is true, just continue onto the next line.
+   m_line = strtrim(m_line);
+   if strncmp(m_line,'function ',9) || isempty(m_line)
+      continue
+   end
+
+   if atLeastR14
+      % In R14, block comments where introduced ( %{...%} )
+      if length(m_line)>1 && ...
+            strcmp(m_line(1:2),'%{')
+         inblockcomment = true;
+      elseif length(previous_line)>1 && ...
+            strcmp(previous_line(1:2),'%}')
+         inblockcomment = false;
+      end
+   end
+
+   % Check if comment line or if line continued from previous line
+   if ~strcmp(m_line(1),'%') && ...
+         ~(length(previous_line)>2 && ...
+         strcmp(previous_line(end-2:end),'...') && ...
+         ~strcmp(previous_line(1),'%')) && ...
+         ~inblockcomment
+      sl = sl+1;
+   end
+
+   % Keep track of current line to see if the next line is a continuation
+   % of the current
+   previous_line = m_line;
+end
+
+fclose(fid);
 
 end

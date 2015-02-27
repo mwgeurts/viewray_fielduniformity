@@ -25,9 +25,20 @@ function handles = BrowseCallback(handles, head)
 % Log event
 Event([head, ' browse button selected']);
 
-% Request the user to select the SNC Profiler PRM file
-Event('UI window opened to select file');
-[name, path] = uigetfile('*.prm', 'Select SNC Profiler data', handles.path);
+% If not executing in unit test
+if handles.unitflag == 0
+    
+    % Request the user to select the SNC Profiler PRM file
+    Event('UI window opened to select file');
+    [name, path] = uigetfile('*.prm', 'Select SNC Profiler data', ...
+        handles.path);
+else
+    
+    % Log unit test
+    Event('Retrieving stored name and path variables', 'UNIT');
+    name = handles.unitname;
+    path = handles.unitpath;
+end
 
 % If a file was selected
 if ~isempty(name)
@@ -39,7 +50,7 @@ if ~isempty(name)
     set(handles.([head,'file']), 'String', fullfile(path, name));
            
     % Log names
-    Event([fullfile(path, name),' selected\n']);
+    Event([fullfile(path, name),' selected']);
     
     % Update default path
     handles.path = path;
