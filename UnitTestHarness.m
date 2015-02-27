@@ -81,7 +81,7 @@ fprintf(fid, ['The principal features of the ViewRay Field Uniformity-', ...
 % Start table containing test configuration
 Event('Writing test system configuration', 'UNIT');
 fprintf(fid, '| Specification | Test System Configuration |\n');
-fprintf(fid, '|--|--|\n');
+fprintf(fid, '|----|----|\n');
 
 % Retrieve CPU info
 Event('Retrieving test system CPU status', 'UNIT');
@@ -136,7 +136,9 @@ fprintf(fid, ['Unit testing was performed using an automated test harness ', ...
     'developed to test each application component and, where relevant, ', ...
     'compare the results to pre-validated reference data.  Refer to the ', ...
     'documentation in `UnitTestHarness()` for details on how each test ', ...
-    'case was performed.\n\n']);
+    'case was performed.  Each Unit Test is referenced to one or more ', ...
+    'requirements through the [[Traceability Matrix]] using the Test ID', ...
+    '.\n\n']);
 
 %% Execute Unit Tests
 % Store current working directory
@@ -233,7 +235,7 @@ for i = 1:size(testData, 1)
     % Print footnotes
     Event('Writing test suite footnotes', 'UNIT');
     for j = 1:length(footnotes) 
-        fprintf(fid, '%s\n', footnotes{j});
+        fprintf(fid, '%s<br>\n', footnotes{j});
     end
     fprintf(fid, '\n');
 end
@@ -498,7 +500,7 @@ version = str2double(c{1}{1})*10000 + str2double(c{1}{2})*100 + ...
 % Add version to results
 results{size(results,1)+1,1} = 'ID';
 results{size(results,1),2} = 'Test Case';
-results{size(results,1),3} = sprintf('Version %s', data.version);
+results{size(results,1),3} = sprintf('Version&nbsp;%s', data.version);
 
 % Update guidata
 guidata(h, data);
@@ -559,7 +561,7 @@ results{size(results,1),3} = sprintf('%i', comp);
 % Add application load time
 results{size(results,1)+1,1} = '3';
 results{size(results,1),2} = 'Application Load Time<sup>1</sup>';
-results{size(results,1),3} = sprintf('%0.3f sec', time);
+results{size(results,1),3} = sprintf('%0.1f sec', time);
 footnotes{length(footnotes)+1} = ['<sup>1</sup>Prior to Version 1.1 ', ...
     'only the 27.3 cm x 27.3 cm reference profile existed'];
 
@@ -611,7 +613,7 @@ results{size(results,1),3} = pf;
 % Add result (with footnote)
 results{size(results,1)+1,1} = '5';
 results{size(results,1),2} = 'Reference Data Load Time<sup>1</sup>';
-results{size(results,1),3} = sprintf('%0.3f sec', time);
+results{size(results,1),3} = sprintf('%0.1f sec', time);
 
 %% TEST 6/7: Reference Data Identical
 % Retrieve guidata
@@ -647,9 +649,9 @@ if version >= 010100
         ypf = pass;
 
         % Add reference profiles to preamble
-        preamble{length(preamble)+1} = ['| Reference Data | ', ...
-            data.references{1}, ' ', strjoin(data.references(2:end), ' '), ...
-            ' |'];
+        preamble{length(preamble)+1} = ['| Reference&nbsp;Data | ', ...
+            data.references{1}, '<br>', strjoin(data.references(2:end), ...
+            '<br>'), ' |'];
     end
     
 % If version < 1.1.0    
@@ -718,10 +720,9 @@ results{size(results,1),3} = xpf;
 results{size(results,1)+1,1} = '7';
 results{size(results,1),2} = 'Reference MLC Y Data within 1%/0.1 mm<sup>2</sup>';
 results{size(results,1),3} = ypf;
-footnotes{length(footnotes)+1} = ['<sup>2</sup>In version 1.0 a bug was ', ...
-    'present where MLC Y T&G effect was not accounted for in the ', ...
-    'reference data'];
-
+footnotes{length(footnotes)+1} = ['<sup>2</sup>[#10](../issues/10) ', ...
+    'In Version 1.0 a bug was identified where MLC Y T&G effect was not', ...
+    ' accounted for in the reference data'];
 
 %% TEST 8/9: H1 Browse Loads Data Successfully/Load Time
 % Retrieve guidata
@@ -760,7 +761,7 @@ results{size(results,1),3} = pf;
 % Add result
 results{size(results,1)+1,1} = '9';
 results{size(results,1),2} = 'Browse Callback Load Time';
-results{size(results,1),3} = sprintf('%0.3f sec', time);
+results{size(results,1),3} = sprintf('%0.1f sec', time);
 
 %% TEST 10: MLC X Profile Identical
 % Retrieve guidata
@@ -887,6 +888,165 @@ end
 results{size(results,1)+1,1} = '11';
 results{size(results,1),2} = 'MLC Y Profile within 0.1%';
 results{size(results,1),3} = pf;
+
+%% TEST 12: Positive Diagonal Profile Identical (> 1.1.0)
+% Retrieve guidata
+data = guidata(h);
+
+% If version >= 1.1.0
+if version >= 010100
+
+    % If reference data exists
+    if nargin == 3
+
+        % If current value equals the reference
+        if isequal(data.h1results.pdiag(1,:), varargin{3}.pdiag(1,:)) && ...
+                isequal(data.h1results.pdiag(2,:), varargin{3}.pdiag(2,:))
+
+            % Record pass
+            pf = pass;
+        else
+
+            % Record fail
+            pf = fail;
+        end
+
+    % Otherwise, no reference data exists
+    else
+
+        % Set current value as reference
+        reference.pdiag = data.h1results.pdiag;
+
+        % Assume pass
+        pf = pass;
+    end
+
+% If version < 1.1.0    
+else
+
+    % Diagonal profiles do not exist
+    pf = unk;
+
+end
+
+% Add result with footnote
+results{size(results,1)+1,1} = '12';
+results{size(results,1),2} = 'Positive Diagonal Profile within 0.1%<sup>3</sup>';
+results{size(results,1),3} = pf;
+footnotes{length(footnotes)+1} = ['<sup>3</sup>Prior to Version 1.1 ', ...
+    'diagonal profiles were not available'];
+
+%% TEST 13: Negative Diagonal Profile Identical (>1.1.0)
+% Retrieve guidata
+data = guidata(h);
+
+% If version >= 1.1.0
+if version >= 010100
+
+    % If reference data exists
+    if nargin == 3
+
+        % If current value equals the reference
+        if isequal(data.h1results.ndiag(1,:), varargin{3}.ndiag(1,:)) && ...
+                isequal(data.h1results.ndiag(2,:), varargin{3}.ndiag(2,:))
+
+            % Record pass
+            pf = pass;
+        else
+
+            % Record fail
+            pf = fail;
+        end
+
+    % Otherwise, no reference data exists
+    else
+
+        % Set current value as reference
+        reference.ndiag = data.h1results.ndiag;
+
+        % Assume pass
+        pf = pass;
+    end
+
+% If version < 1.1.0    
+else
+
+    % Diagonal profiles do not exist
+    pf = unk;
+
+end
+
+% Add result
+results{size(results,1)+1,1} = '13';
+results{size(results,1),2} = 'Negative Diagonal Profile within 0.1%<sup>3</sup>';
+results{size(results,1),3} = pf;
+
+%% TEST 14: Timing Profile Identical
+% Retrieve guidata
+data = guidata(h);
+
+% If version >= 1.1.0
+if version >= 010100
+
+    % If reference data exists
+    if nargin == 3
+
+        % If current value equals the reference
+        if isequal(data.h1results.ndiag(1,:), varargin{3}.ndiag(1,:)) && ...
+                isequal(data.h1results.ndiag(2,:), varargin{3}.ndiag(2,:))
+
+            % Record pass
+            pf = pass;
+        else
+
+            % Record fail
+            pf = fail;
+        end
+
+    % Otherwise, no reference data exists
+    else
+
+        % Set current value as reference
+        reference.ndiag = data.h1results.ndiag;
+
+        % Assume pass
+        pf = pass;
+    end
+
+% If version < 1.1.0    
+else
+
+    % Diagonal profiles do not exist
+    pf = unk;
+
+end
+
+% Add result
+results{size(results,1)+1,1} = '14';
+results{size(results,1),2} = 'Timing Profile within 0.1%<sup>3</sup>';
+results{size(results,1),3} = pf;
+
+%% TEST 15: MLC X Gamma Identical
+
+%% TEST 16: MLC Y Gamma Identical
+
+%% TEST 17: Positive Diagonal Gamma Identical (> 1.1.0)
+
+%% TEST 18: Negative Diagonal Gamma Identical (> 1.1.0)
+
+%% TEST 19: Statistics Identical
+
+%% TEST 20: H1 Figures Functional
+
+%% TEST 21/22: H2/H3 Browse Loads Data Successfully
+
+%% TEST 23: Print Report Functional (> 1.1.0)
+
+%% TEST 24/25: H2/H3 Figures Functional
+
+%% TEST 26/27/28: Clear All Buttons Functional
+
+%% TEST 29: Documentation Correct
 
 
 %% Finish up
