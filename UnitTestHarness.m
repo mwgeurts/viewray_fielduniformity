@@ -412,10 +412,15 @@ end
 % Close file handle
 fclose(fid);
 
-% Save profiler results to HTML file
-% [path, ~, ~] = fileparts(char(fullfile(cwd, report)));
-% Event(['Saving profiler results to ', path]);
-% profsave(stats, path);
+% Save profiler results to HTML files in MATLAB version folder
+[path, ~, ~] = fileparts(char(fullfile(cwd, report)));
+if isdir(fullfile(path, v{1}{1}))
+    Event(['Clearing results in ', fullfile(path, v{1}{1})], 'UNIT');
+    rmdir(fullfile(path, v{1}{1}));
+end
+mkdir(fullfile(path, v{1}{1}));
+Event(['Saving profiler results to ', fullfile(path, v{1}{1})], 'UNIT');
+profsave(stats, fullfile(path, v{1}{1}));
 
 % Restore current directory
 Event('Reverting to unit test working directory', 'UNIT');
@@ -484,7 +489,7 @@ cd(varargin{1});
 % Open application, storing figure handle
 t = tic;
 h = FieldUniformity;
-time = toc(t);
+time = sprintf('%0.1f sec', toc(t));
 
 % Retrieve guidata
 data = guidata(h);
@@ -561,7 +566,7 @@ results{size(results,1),3} = sprintf('%i', comp);
 % Add application load time
 results{size(results,1)+1,1} = '3';
 results{size(results,1),2} = 'Application Load Time<sup>1</sup>';
-results{size(results,1),3} = sprintf('%0.1f sec', time);
+results{size(results,1),3} = time;
 footnotes{length(footnotes)+1} = ['<sup>1</sup>Prior to Version 1.1 ', ...
     'only the 27.3 cm x 27.3 cm reference profile existed'];
 
@@ -584,7 +589,7 @@ if version >= 010100
     end
     
     % Record completion time
-    time = toc(t);
+    time = sprintf('%0.1f sec', toc(t));
     
 % If version < 1.1.0    
 else
@@ -602,7 +607,7 @@ else
     end
     
     % Record completion time
-    time = toc(t);
+    time = sprintf('%0.1f sec', toc(t));
 end
 
 % Add success message
@@ -613,7 +618,7 @@ results{size(results,1),3} = pf;
 % Add result (with footnote)
 results{size(results,1)+1,1} = '5';
 results{size(results,1),2} = 'Reference Data Load Time<sup>1</sup>';
-results{size(results,1),3} = sprintf('%0.1f sec', time);
+results{size(results,1),3} = time;
 
 %% TEST 6/7: Reference Data Identical
 % Retrieve guidata
@@ -736,6 +741,23 @@ callback = get(data.h1browse, 'Callback');
 data.unitpath = path;
 data.unitname = [name, ext];
 
+% Force specific gamma criteria (3%/1mm)
+data.abs = 3;
+
+% If version >= 1.1.0
+if version >= 010100
+    
+    % Store DTA in cm
+    data.dta = 0.1;
+else
+    
+    % Store DTA in mm
+    data.dta = 1;
+end
+
+% Add gamma criteria to preamble
+preamble{length(preamble)+1} = '| Gamma Criteria | 3%/1mm |';
+
 % Store guidata
 guidata(h, data);
 
@@ -751,7 +773,7 @@ catch
 end
 
 % Record completion time
-time = toc(t);
+time = sprintf('%0.1f sec', toc(t));
 
 % Add result
 results{size(results,1)+1,1} = '8';
@@ -761,7 +783,7 @@ results{size(results,1),3} = pf;
 % Add result
 results{size(results,1)+1,1} = '9';
 results{size(results,1),2} = 'Browse Callback Load Time';
-results{size(results,1),3} = sprintf('%0.1f sec', time);
+results{size(results,1),3} = time;
 
 %% TEST 10: MLC X Profile Identical
 % Retrieve guidata
@@ -992,8 +1014,8 @@ if version >= 010100
     if nargin == 3
 
         % If current value equals the reference
-        if isequal(data.h1results.ndiag(1,:), varargin{3}.ndiag(1,:)) && ...
-                isequal(data.h1results.ndiag(2,:), varargin{3}.ndiag(2,:))
+        if isequal(data.h1results.tdata(1,:), varargin{3}.tdata(1,:)) && ...
+                isequal(data.h1results.tdata(2,:), varargin{3}.tdata(2,:))
 
             % Record pass
             pf = pass;
@@ -1007,7 +1029,198 @@ if version >= 010100
     else
 
         % Set current value as reference
-        reference.ndiag = data.h1results.ndiag;
+        reference.tdata = data.h1results.tdata;
+
+        % Assume pass
+        pf = pass;
+    end
+
+% If version < 1.1.0    
+else
+
+    % If reference data exists
+    if nargin == 3
+
+        % If current value equals the reference to within 0.1%
+        if max(abs(data.h1T(2,2:end)/max(data.h1T(2,:)) - ...
+                varargin{3}.tdata(2,2:end)/max(varargin{3}.tdata(2,:)))) ...
+                < 0.001
+
+            % Record pass
+            pf = pass;
+        else
+
+            % Record fail
+            pf = fail;
+        end
+
+    % Otherwise, no reference data exists
+    else
+        pf = unk;
+    end
+
+end
+
+% Add result
+results{size(results,1)+1,1} = '14';
+results{size(results,1),2} = 'Timing Profile within 0.1%<sup>3</sup>';
+results{size(results,1),3} = pf;
+
+%% TEST 15: MLC X Gamma Identical
+% Retrieve guidata
+data = guidata(h);
+
+% If version >= 1.1.0
+if version >= 010100
+
+    % If reference data exists
+    if nargin == 3
+
+        % If current value equals the reference
+        if isequal(data.h1results.ygamma(1,:), varargin{3}.ygamma(1,:)) && ...
+                isequal(data.h1results.ygamma(2,:), varargin{3}.ygamma(2,:))
+
+            % Record pass
+            pf = pass;
+        else
+
+            % Record fail
+            pf = fail;
+        end
+
+    % Otherwise, no reference data exists
+    else
+
+        % Set current value as reference
+        reference.ygamma = data.h1results.ygamma;
+
+        % Assume pass
+        pf = pass;
+
+    end
+
+% If version < 1.1.0    
+else
+
+    % If reference data exists
+    if nargin == 3
+
+        % If current value equals the reference to within 0.1
+        if max(abs(data.h1X(3,:) - varargin{3}.ygamma(2,:)) .* ...
+                (abs(varargin{3}.ydata(1,:)) < 15)) < 0.1
+
+            % Record pass
+            pf = pass;
+        else
+
+            % Record fail
+            pf = fail;
+        end
+
+    % Otherwise, no reference data exists
+    else
+        pf = unk;
+    end
+end
+
+% Add result
+results{size(results,1)+1,1} = '15';
+results{size(results,1),2} = 'MLC X Gamma within 0.1';
+results{size(results,1),3} = pf;
+
+%% TEST 16: MLC Y Gamma Identical
+% Retrieve guidata
+data = guidata(h);
+
+% If version >= 1.1.0
+if version >= 010100
+
+    % If reference data exists
+    if nargin == 3
+
+        % If current value equals the reference
+        if isequal(data.h1results.xgamma(1,:), varargin{3}.xgamma(1,:)) && ...
+                isequal(data.h1results.xgamma(2,:), varargin{3}.xgamma(2,:))
+
+            % Record pass
+            pf = pass;
+        else
+
+            % Record fail
+            pf = fail;
+        end
+
+    % Otherwise, no reference data exists
+    else
+
+        % Set current value as reference
+        reference.xgamma = data.h1results.xgamma;
+
+        % Assume pass
+        pf = pass;
+
+    end
+
+% If version < 1.1.0    
+else
+
+    % If reference data exists
+    if nargin == 3
+
+        % Remove interpolated values
+        h1Y = [data.h1Y(3,1:31) data.h1Y(3,33) ...
+            data.h1Y(3,35:end)];
+        
+        % If current value equals the reference to within 0.1
+        if max(abs(h1Y - varargin{3}.xgamma(2,:)) .* ...
+                (abs(varargin{3}.xgamma(1,:)) < 15)) < 0.1
+
+            % Record pass
+            pf = pass;
+        else
+
+            % Record fail
+            pf = fail;
+        end
+
+    % Otherwise, no reference data exists
+    else
+        pf = unk;
+    end
+end
+
+% Add result
+results{size(results,1)+1,1} = '16';
+results{size(results,1),2} = 'MLC Y Gamma within 0.1<sup>2</sup>';
+results{size(results,1),3} = pf;
+
+%% TEST 17: Positive Diagonal Gamma Identical (> 1.1.0)
+% Retrieve guidata
+data = guidata(h);
+
+% If version >= 1.1.0
+if version >= 010100
+
+    % If reference data exists
+    if nargin == 3
+
+        % If current value equals the reference
+        if isequal(data.h1results.pgamma(1,:), varargin{3}.pgamma(1,:)) && ...
+                isequal(data.h1results.pgamma(2,:), varargin{3}.pgamma(2,:))
+
+            % Record pass
+            pf = pass;
+        else
+
+            % Record fail
+            pf = fail;
+        end
+
+    % Otherwise, no reference data exists
+    else
+
+        % Set current value as reference
+        reference.pgamma = data.h1results.pgamma;
 
         % Assume pass
         pf = pass;
@@ -1021,33 +1234,429 @@ else
 
 end
 
-% Add result
-results{size(results,1)+1,1} = '14';
-results{size(results,1),2} = 'Timing Profile within 0.1%<sup>3</sup>';
+% Add result with footnote
+results{size(results,1)+1,1} = '17';
+results{size(results,1),2} = 'Positive Diagonal Gamma within 0.1<sup>3</sup>';
 results{size(results,1),3} = pf;
 
-%% TEST 15: MLC X Gamma Identical
-
-%% TEST 16: MLC Y Gamma Identical
-
-%% TEST 17: Positive Diagonal Gamma Identical (> 1.1.0)
-
 %% TEST 18: Negative Diagonal Gamma Identical (> 1.1.0)
+% Retrieve guidata
+data = guidata(h);
+
+% If version >= 1.1.0
+if version >= 010100
+
+    % If reference data exists
+    if nargin == 3
+
+        % If current value equals the reference
+        if isequal(data.h1results.ngamma(1,:), varargin{3}.ngamma(1,:)) && ...
+                isequal(data.h1results.ngamma(2,:), varargin{3}.ngamma(2,:))
+
+            % Record pass
+            pf = pass;
+        else
+
+            % Record fail
+            pf = fail;
+        end
+
+    % Otherwise, no reference data exists
+    else
+
+        % Set current value as reference
+        reference.ngamma = data.h1results.ngamma;
+
+        % Assume pass
+        pf = pass;
+    end
+
+% If version < 1.1.0    
+else
+
+    % Diagonal profiles do not exist
+    pf = unk;
+
+end
+
+% Add result with footnote
+results{size(results,1)+1,1} = '18';
+results{size(results,1),2} = 'Negative Diagonal Gamma within 0.1<sup>3</sup>';
+results{size(results,1),3} = pf;
 
 %% TEST 19: Statistics Identical
+% Retrieve guidata
+data = guidata(h);
+
+% If version >= 1.1.0
+if version >= 010100
+
+    % If reference data exists
+    if nargin == 3
+
+        % If current value equals the reference
+        if isequal(textscan(data.h1table.Data{2,2}, '%f'), ...
+                varargin{3}.statbot) && ...
+                isequal(textscan(data.h1table.Data{3,2}, '%f'), ...
+                varargin{3}.statxfwhm) && ...
+                isequal(textscan(data.h1table.Data{4,2}, '%f'), ...
+                varargin{3}.statxflat) && ...
+                isequal(textscan(data.h1table.Data{5,2}, '%f'), ...
+                varargin{3}.statxsym) && ...
+                isequal(textscan(data.h1table.Data{6,2}, '%f'), ...
+                varargin{3}.statyfwhm) && ...
+                isequal(textscan(data.h1table.Data{7,2}, '%f'), ...
+                varargin{3}.statyflat) && ...
+                isequal(textscan(data.h1table.Data{8,2}, '%f'), ...
+                varargin{3}.statysym)
+
+            % Record pass
+            pf = pass;
+        else
+
+            % Record fail
+            pf = fail;
+        end
+
+    % Otherwise, no reference data exists
+    else
+
+        % Set current value as reference
+        reference.statbot = textscan(data.h1table.Data{2,2}, '%f');
+        reference.statxfwhm = textscan(data.h1table.Data{3,2}, '%f');
+        reference.statxflat = textscan(data.h1table.Data{4,2}, '%f');
+        reference.statxsym = textscan(data.h1table.Data{5,2}, '%f');
+        reference.statyfwhm = textscan(data.h1table.Data{6,2}, '%f');
+        reference.statyflat = textscan(data.h1table.Data{7,2}, '%f');
+        reference.statysym = textscan(data.h1table.Data{8,2}, '%f');
+
+        % Assume pass
+        pf = pass;
+    end
+
+% If version < 1.1.0    
+else
+
+    % If reference data exists
+    if nargin == 3
+
+        % If current value equals the reference (within 0.1 sec/0.1 mm/0.1%)
+        if abs(cell2mat(textscan(data.h1table.Data{4,2}, '%f')) - ...
+                varargin{3}.statbot{1}) < 0.1 && ...
+                abs(cell2mat(textscan(data.h1table.Data{8,2}, '%f')) - ...
+                varargin{3}.statxfwhm{1}) < 0.1 && ...
+                abs(cell2mat(textscan(data.h1table.Data{9,2}, '%f')) - ...
+                varargin{3}.statxflat{1}) < 0.1 && ...
+                abs(cell2mat(textscan(data.h1table.Data{10,2}, '%f')) - ...
+                varargin{3}.statxsym{1}) < 0.1 && ...
+                abs(cell2mat(textscan(data.h1table.Data{14,2}, '%f')) - ...
+                varargin{3}.statyfwhm{1}) < 0.1 && ...
+                abs(cell2mat(textscan(data.h1table.Data{15,2}, '%f')) - ...
+                varargin{3}.statyflat{1}) < 0.1 && ...
+                abs(cell2mat(textscan(data.h1table.Data{16,2}, '%f')) - ...
+                varargin{3}.statysym{1}) < 0.1
+
+            % Record pass
+            pf = pass;
+        else
+
+            % Record fail
+            pf = fail;
+        end
+
+    % Otherwise, no reference data exists
+    else
+        pf = unk;
+    end
+
+end
+
+% Add result with footnote
+results{size(results,1)+1,1} = '19';
+results{size(results,1),2} = 'Statistics within 0.1 sec/mm/%<sup>4</sup>';
+results{size(results,1),3} = pf;
+footnotes{length(footnotes)+1} = ['<sup>4</sup>[#11](../issues/11) In ', ...
+    'Version 1.1.0 a bug was identified where flatness was computed', ...
+    ' incorrectly'];
 
 %% TEST 20: H1 Figures Functional
+% Retrieve guidata
+data = guidata(h);
+    
+% Retrieve callback to H1 display dropdown
+callback = get(data.h1display, 'Callback');
+
+% Execute callbacks in try/catch statement
+try
+    % Start with pass
+    pf = pass;
+    
+    % Loop through each display option
+    for i = 1:length(data.h1display.String)
+        
+        % Set value
+        data.h1display.Value = i;
+        guidata(h, data);
+        
+        % Execute callback
+        callback(data.h1display, data);
+    end
+catch
+    
+    % If callback fails, record failure
+    pf = fail; 
+end
+
+% Add result with footnote
+results{size(results,1)+1,1} = '20';
+results{size(results,1),2} = 'H1 Figure Display Functional';
+results{size(results,1),3} = pf;
 
 %% TEST 21/22: H2/H3 Browse Loads Data Successfully
+% Retrieve guidata
+data = guidata(h);
 
-%% TEST 23: Print Report Functional (> 1.1.0)
+% Set unit path/name
+[path, name, ext] = fileparts(varargin{2});
+data.unitpath = path;
+data.unitname = [name, ext];
 
-%% TEST 24/25: H2/H3 Figures Functional
+% Store guidata
+guidata(h, data);
 
-%% TEST 26/27/28: Clear All Buttons Functional
+% Retrieve callback to H2 browse button
+callback = get(data.h2browse, 'Callback');
 
-%% TEST 29: Documentation Correct
+% Execute callback in try/catch statement
+try
+    pf = pass;
+    callback(data.h2browse, data);
+catch
 
+    % If callback throws error, record fail
+    pf = fail;
+end
+
+% Add result
+results{size(results,1)+1,1} = '21';
+results{size(results,1),2} = 'H2 Browse Loads Data Successfully';
+results{size(results,1),3} = pf;
+
+% Retrieve callback to H3 browse button
+callback = get(data.h3browse, 'Callback');
+
+% Execute callback in try/catch statement
+try
+    pf = pass;
+    callback(data.h3browse, data);
+catch
+
+    % If callback throws error, record fail
+    pf = fail;
+end
+
+% Add result
+results{size(results,1)+1,1} = '22';
+results{size(results,1),2} = 'H3 Browse Loads Data Successfully';
+results{size(results,1),3} = pf;
+
+%% TEST 23/24: H2/H3 Figures Functional
+% Retrieve guidata
+data = guidata(h);
+    
+% Retrieve callback to H2 display dropdown
+callback = get(data.h2display, 'Callback');
+
+% Execute callbacks in try/catch statement
+try
+    % Start with pass
+    pf = pass;
+    
+    % Loop through each display option
+    for i = 1:length(data.h2display.String)
+        
+        % Set value
+        data.h2display.Value = i;
+        guidata(h, data);
+        
+        % Execute callback
+        callback(data.h2display, data);
+    end
+catch
+    
+    % If callback fails, record failure
+    pf = fail; 
+end
+
+% Add result
+results{size(results,1)+1,1} = '23';
+results{size(results,1),2} = 'H2 Figure Display Functional';
+results{size(results,1),3} = pf;
+
+% Retrieve callback to H3 display dropdown
+callback = get(data.h3display, 'Callback');
+
+% Execute callbacks in try/catch statement
+try
+    % Start with pass
+    pf = pass;
+    
+    % Loop through each display option
+    for i = 1:length(data.h3display.String)
+        
+        % Set value
+        data.h3display.Value = i;
+        guidata(h, data);
+        
+        % Execute callback
+        callback(data.h3display, data);
+    end
+catch
+    
+    % If callback fails, record failure
+    pf = fail; 
+end
+
+% Add result
+results{size(results,1)+1,1} = '24';
+results{size(results,1),2} = 'H3 Figure Display Functional';
+results{size(results,1),3} = pf;
+
+%% TEST 25/26: Print Report Functional (> 1.1.0)
+% If version >= 1.1.0
+if version >= 010100
+    
+    % Retrieve guidata
+    data = guidata(h);
+
+    % Retrieve callback to print button
+    callback = get(data.print_button, 'Callback');
+
+    % Execute callback in try/catch statement
+    try
+        % Start with pass
+        pf = pass;
+    
+        % Start timer
+        t = tic;
+        
+        % Execute callback
+        callback(data.print_button, data);
+    catch
+        
+        % If callback fails, record failure
+        pf = fail; 
+    end
+    
+    % Record completion time
+    time = sprintf('%0.1f sec', toc(t)); 
+
+% If version < 1.1.0
+else
+    
+    % This feature does not exist
+    pf = unk;
+    time = unk;
+end
+
+% Add result
+results{size(results,1)+1,1} = '25';
+results{size(results,1),2} = 'Print Report Functional';
+results{size(results,1),3} = pf;
+
+% Add result
+results{size(results,1)+1,1} = '26';
+results{size(results,1),2} = 'Print Report Time';
+results{size(results,1),3} = time;
+
+%% TEST 27/28/29: Clear All Buttons Functional
+% Retrieve guidata
+data = guidata(h);
+
+% Retrieve callback to H1 clear button
+callback = get(data.h1clear, 'Callback');
+
+% Execute callback in try/catch statement
+try
+    
+    % Start with pass
+    pf = pass;
+    
+    % Execute callback
+    callback(data.h1clear, h);
+catch
+    
+    % Callback failed, so record error
+    pf = fail;
+end
+
+% Add result
+results{size(results,1)+1,1} = '27';
+results{size(results,1),2} = 'H1 Clear Button Functional';
+results{size(results,1),3} = pf;
+
+% Retrieve callback to H1 clear button
+callback = get(data.h2clear, 'Callback');
+
+% Execute callback in try/catch statement
+try
+    
+    % Start with pass
+    pf = pass;
+    
+    % Execute callback
+    callback(data.h2clear, h);
+catch
+    
+    % Callback failed, so record error
+    pf = fail;
+end
+
+% Add result
+results{size(results,1)+1,1} = '28';
+results{size(results,1),2} = 'H2 Clear Button Functional';
+results{size(results,1),3} = pf;
+
+% Retrieve callback to H1 clear button
+callback = get(data.h3clear, 'Callback');
+
+% Execute callback in try/catch statement
+try
+    
+    % Start with pass
+    pf = pass;
+    
+    % Execute callback
+    callback(data.h3clear, h);
+catch
+    
+    % Callback failed, so record error
+    pf = fail;
+end
+
+% Add result
+results{size(results,1)+1,1} = '29';
+results{size(results,1),2} = 'H3 Clear Button Functional';
+results{size(results,1),3} = pf;
+
+%% TEST 30: Documentation Correct
+% Look for README.md
+fid = fopen('README.md', 'r');
+
+% If file handle was valid, record pass
+if fid >= 3
+    pf = pass;
+else
+    pf = fail;
+end
+
+% Close file handle
+fclose(fid);
+
+% Add result
+results{size(results,1)+1,1} = '30';
+results{size(results,1),2} = 'Documentation Exists';
+results{size(results,1),3} = pf;
 
 %% Finish up
 % Close all figures
