@@ -438,9 +438,13 @@ temp = [tempname, '.pdf'];
 Event(['Saving report to ', temp]);
 saveas(hObject, temp);
 
-% Open file
-Event(['Opening file ', temp]);
-open(temp);
+% Open file (if not running in unit testing)
+if data.unitflag == 0
+    Event(['Opening file ', temp]);
+    open(temp);
+else
+    Event('Skipping file open in unit test framework', 'UNIT');
+end
 
 % Log completion
 Event(sprintf('Report saved successfully in %0.3f seconds', toc));
