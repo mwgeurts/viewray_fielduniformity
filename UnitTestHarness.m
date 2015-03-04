@@ -35,7 +35,7 @@ report = './test_reports/unit_test';
 % test suite, column 2 is the absolute path to the file(s)
 testData = {
     '27.3cm'     './test_data/Head1_G90_27p3.prm'
-%    '10.5cm'     './test_data/Head3_G90_10p5.prm'
+    '10.5cm'     './test_data/Head3_G90_10p5.prm'
 };
 
 % Declare current version directory
@@ -136,9 +136,10 @@ fprintf(fid, ['Unit testing was performed using an automated test harness ', ...
     'developed to test each application component and, where relevant, ', ...
     'compare the results to pre-validated reference data.  Refer to the ', ...
     'documentation in `UnitTestHarness()` for details on how each test ', ...
-    'case was performed.  Each Unit Test is referenced to one or more ', ...
-    'requirements through the [[Traceability Matrix]] using the Test ID', ...
-    '.\n\n']);
+    'case was performed, including the conditions evaluated by each test.', ...
+    'Finally, each Unit Test is referenced to one or more [requirements]', ...
+    '(Software-Requirements) through the [Traceability Matrix]', ...
+    '(Traceability-Matrix) using the Test ID.\n\n']);
 
 %% Execute Unit Tests
 % Store current working directory
@@ -482,14 +483,50 @@ results = cell(0,3);
 % Initialize footnotes cell array
 footnotes = cell(0,1);
 
-%% TEST 1: Application Load Time
+%% TEST 1/2: Application Loads Successfully, Time
+%
+% DESCRIPTION: This unit test attempts to execute the main application
+%   executable and times how long it takes.  This test also verifies that
+%   errors are present if the required submodules do not exist.
+%
+% RELEVANT REQUIREMENTS: U001, F001, P001
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): With the appropriate submodules present, attempt to open
+%   the application and verify that it loads without error in the required
+%   time.
+%
+% CONDITION B (-): With the snc_extract submodule missing, attempt to open
+%   the application and verify that it throws an error
+
 % Change to directory of version being tested
 cd(varargin{1});
 
-% Open application, storing figure handle
-t = tic;
-h = FieldUniformity;
-time = sprintf('%0.1f sec', toc(t));
+% Start with fail
+pf = fail;
+
+% Attempt to open application without submodule
+try
+    FieldUniformity('unitParseSNCprm');
+catch
+    pf = pass;
+end
+
+% Close all figures
+close all force;
+
+% Open application again with submodule, this time storing figure handle
+try
+    t = tic;
+    h = FieldUniformity;
+    time = sprintf('%0.1f sec', toc(t));
+    if strcmp(pf, pass)
+        pf = pass;
+    end
+catch
+    pf = fail;
+end
 
 % Retrieve guidata
 data = guidata(h);
@@ -510,7 +547,31 @@ results{size(results,1),3} = sprintf('Version&nbsp;%s', data.version);
 % Update guidata
 guidata(h, data);
 
-%% TEST 2/3: Code Analyzer Messages, Cumulative Cyclomatic Complexity
+% Add application load result
+results{size(results,1)+1,1} = '1';
+results{size(results,1),2} = 'Application Loads Successfully';
+results{size(results,1),3} = pf;
+
+% Add application load time
+results{size(results,1)+1,1} = '2';
+results{size(results,1),2} = 'Application Load Time<sup>1</sup>';
+results{size(results,1),3} = time;
+footnotes{length(footnotes)+1} = ['<sup>1</sup>Prior to Version 1.1 ', ...
+    'only the 27.3 cm x 27.3 cm reference profile existed'];
+
+%% TEST 3/4: Code Analyzer Messages, Cumulative Cyclomatic Complexity
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
+% Search for required functions
 fList = matlab.codetools.requiredFilesAndProducts('FieldUniformity.m');
 
 % Initialize complexity and messages counters
@@ -554,23 +615,27 @@ for i = 1:length(fList)
 end
 
 % Add code analyzer messages counter to results
-results{size(results,1)+1,1} = '1';
+results{size(results,1)+1,1} = '3';
 results{size(results,1),2} = 'Code Analyzer Messages';
 results{size(results,1),3} = sprintf('%i', mess);
 
 % Add complexity results
-results{size(results,1)+1,1} = '2';
+results{size(results,1)+1,1} = '4';
 results{size(results,1),2} = 'Cumulative Cyclomatic Complexity';
 results{size(results,1),3} = sprintf('%i', comp);
 
-% Add application load time
-results{size(results,1)+1,1} = '3';
-results{size(results,1),2} = 'Application Load Time<sup>1</sup>';
-results{size(results,1),3} = time;
-footnotes{length(footnotes)+1} = ['<sup>1</sup>Prior to Version 1.1 ', ...
-    'only the 27.3 cm x 27.3 cm reference profile existed'];
+%% TEST 5: Reference Data Loads Successfully, Load Time
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
 
-%% TEST 4/5: Reference Data Loads Successfully, Load Time
 % Retrieve guidata
 data = guidata(h);
     
@@ -579,7 +644,6 @@ if version >= 010100
 
     % Execute LoadProfilerReference in try/catch statement
     try
-        t = tic;
         pf = pass;
         LoadProfilerDICOMReference(data.references, '90');
     catch
@@ -587,16 +651,12 @@ if version >= 010100
         % If it errors, record fail
         pf = fail;
     end
-    
-    % Record completion time
-    time = sprintf('%0.1f sec', toc(t));
-    
+  
 % If version < 1.1.0    
 else
     
     % Execute LoadReferenceProfiles in try/catch statement
     try
-        t = tic;
         pf = pass;
         LoadReferenceProfiles(...
             'AP_27P3X27P3_PlaneDose_Vertical_Isocenter.dcm');
@@ -605,22 +665,26 @@ else
         % If it errors, record fail
         pf = fail;
     end
-    
-    % Record completion time
-    time = sprintf('%0.1f sec', toc(t));
 end
 
 % Add success message
-results{size(results,1)+1,1} = '4';
+results{size(results,1)+1,1} = '5';
 results{size(results,1),2} = 'Reference Data Loads Successfully';
 results{size(results,1),3} = pf;
 
-% Add result (with footnote)
-results{size(results,1)+1,1} = '5';
-results{size(results,1),2} = 'Reference Data Load Time<sup>1</sup>';
-results{size(results,1),3} = time;
 
 %% TEST 6/7: Reference Data Identical
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % Retrieve guidata
 data = guidata(h);
     
@@ -730,6 +794,17 @@ footnotes{length(footnotes)+1} = ['<sup>2</sup>[#10](../issues/10) ', ...
     ' accounted for in the reference data'];
 
 %% TEST 8/9: H1 Browse Loads Data Successfully/Load Time
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % Retrieve guidata
 data = guidata(h);
     
@@ -786,6 +861,17 @@ results{size(results,1),2} = 'Browse Callback Load Time';
 results{size(results,1),3} = time;
 
 %% TEST 10: MLC X Profile Identical
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % Retrieve guidata
 data = guidata(h);
 
@@ -851,6 +937,17 @@ results{size(results,1),2} = 'MLC X Profile within 0.1%';
 results{size(results,1),3} = pf;
 
 %% TEST 11: MLC Y Profile Identical
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % Retrieve guidata
 data = guidata(h);
 
@@ -912,6 +1009,17 @@ results{size(results,1),2} = 'MLC Y Profile within 0.1%';
 results{size(results,1),3} = pf;
 
 %% TEST 12: Positive Diagonal Profile Identical (> 1.1.0)
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % Retrieve guidata
 data = guidata(h);
 
@@ -959,6 +1067,17 @@ footnotes{length(footnotes)+1} = ['<sup>3</sup>Prior to Version 1.1 ', ...
     'diagonal profiles were not available'];
 
 %% TEST 13: Negative Diagonal Profile Identical (>1.1.0)
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % Retrieve guidata
 data = guidata(h);
 
@@ -1004,6 +1123,17 @@ results{size(results,1),2} = 'Negative Diagonal Profile within 0.1%<sup>3</sup>'
 results{size(results,1),3} = pf;
 
 %% TEST 14: Timing Profile Identical
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % Retrieve guidata
 data = guidata(h);
 
@@ -1067,6 +1197,17 @@ results{size(results,1),2} = 'Timing Profile within 0.1%<sup>3</sup>';
 results{size(results,1),3} = pf;
 
 %% TEST 15: MLC X Gamma Identical
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % Retrieve guidata
 data = guidata(h);
 
@@ -1129,6 +1270,17 @@ results{size(results,1),2} = 'MLC X Gamma within 0.1';
 results{size(results,1),3} = pf;
 
 %% TEST 16: MLC Y Gamma Identical
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % Retrieve guidata
 data = guidata(h);
 
@@ -1195,6 +1347,17 @@ results{size(results,1),2} = 'MLC Y Gamma within 0.1<sup>2</sup>';
 results{size(results,1),3} = pf;
 
 %% TEST 17: Positive Diagonal Gamma Identical (> 1.1.0)
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % Retrieve guidata
 data = guidata(h);
 
@@ -1240,6 +1403,17 @@ results{size(results,1),2} = 'Positive Diagonal Gamma within 0.1<sup>3</sup>';
 results{size(results,1),3} = pf;
 
 %% TEST 18: Negative Diagonal Gamma Identical (> 1.1.0)
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % Retrieve guidata
 data = guidata(h);
 
@@ -1285,6 +1459,17 @@ results{size(results,1),2} = 'Negative Diagonal Gamma within 0.1<sup>3</sup>';
 results{size(results,1),3} = pf;
 
 %% TEST 19: Statistics Identical
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % Retrieve guidata
 data = guidata(h);
 
@@ -1380,6 +1565,17 @@ footnotes{length(footnotes)+1} = ['<sup>4</sup>[#11](../issues/11) In ', ...
     ' incorrectly'];
 
 %% TEST 20: H1 Figures Functional
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % Retrieve guidata
 data = guidata(h);
     
@@ -1413,6 +1609,17 @@ results{size(results,1),2} = 'H1 Figure Display Functional';
 results{size(results,1),3} = pf;
 
 %% TEST 21/22: H2/H3 Browse Loads Data Successfully
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % Retrieve guidata
 data = guidata(h);
 
@@ -1461,6 +1668,17 @@ results{size(results,1),2} = 'H3 Browse Loads Data Successfully';
 results{size(results,1),3} = pf;
 
 %% TEST 23/24: H2/H3 Figures Functional
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % Retrieve guidata
 data = guidata(h);
     
@@ -1523,6 +1741,17 @@ results{size(results,1),2} = 'H3 Figure Display Functional';
 results{size(results,1),3} = pf;
 
 %% TEST 25/26: Print Report Functional (> 1.1.0)
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % If version >= 1.1.0
 if version >= 010100
     
@@ -1570,6 +1799,18 @@ results{size(results,1),2} = 'Print Report Time';
 results{size(results,1),3} = time;
 
 %% TEST 27/28/29: Clear All Buttons Functional
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS: C001-C014 (assuming all prior unit tests are
+%   completed with each test suite on each system)
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % Retrieve guidata
 data = guidata(h);
 
@@ -1639,7 +1880,18 @@ results{size(results,1)+1,1} = '29';
 results{size(results,1),2} = 'H3 Clear Button Functional';
 results{size(results,1),3} = pf;
 
-%% TEST 30: Documentation Correct
+%% TEST 30: Documentation Exists
+%
+% DESCRIPTION: 
+%
+% RELEVANT REQUIREMENTS:
+%
+% INPUT DATA: No input data required
+%
+% CONDITION A (+): 
+%
+% CONDITION B (-): 
+
 % Look for README.md
 fid = fopen('README.md', 'r');
 

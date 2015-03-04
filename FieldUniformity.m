@@ -127,41 +127,43 @@ set(handles.h2table, 'Data', cell(10,2));
 set(handles.h3table, 'Data', cell(10,2));
 
 %% Initialize global variables
-% Declare the initial path to search when browsing for input files.  This
+% The initial path to search when browsing for input files.  This
 % path will automatically be set to the location of the most recent loaded
 % file during application execution.
 handles.path = userpath;
 Event(['Default file path set to ', handles.path]);
 
-% Declare the expected beam on time. This is used when computing the time
-% difference between measured and expected.
+% The expected beam on time, in seconds. This is used when computing the
+% time difference between measured and expected.
 handles.time = 30; % seconds (expected)
 Event(sprintf('Expected time set to %0.1f seconds', handles.time));
 
-% Declare Gamma analysis criteria
+% Gamma analysis criteria
 handles.abs = 3.0; % percent
-handles.dta = 0.1; % mm
+handles.dta = 0.1; % cm
 Event(sprintf('Gamma criteria set to %0.1f%%/%0.1f mm', ...
     [handles.abs handles.dta*10]));
 
-% Declare the Profiler rotation. This factor will adjust how reference data
-% (computed by the TPS) is extracted for the Profiler axes. If the Profiler 
-% is aligned along the TPS axes, set to zero.  If the profiler is rotated
-% 90 degrees such that the Profiler Y axis is aligned to the TPS X axis,
-% set to 90.
+% The Profiler rotation relative to its specified coordinates. This factor 
+% will adjust how reference data (computed by the TPS) is extracted for the 
+% Profiler axes. If the Profiler is aligned along the TPS axes, set to 
+% zero.  If the profiler is rotated 90 degrees such that the Profiler Y 
+% axis is aligned to the TPS X axis,vset to 90.
 handles.rot = 90;
 Event(sprintf('Profiler rotation set to %0.1f degrees', handles.rot));
 
-% Declare unit test flag. This should only be set to 1 if the application
-% is being run as part of unit testing (see UnitTest for more information)
+% Unit test flag. This will be set to 1 if the application is being run as
+% part of unit testing (see UnitTestHarness for more information)
 handles.unitflag = 0;
 
 %% Load submodules and toolboxes
 % Add snc_extract submodule to search path
 addpath('./snc_extract');
 
-% Check if MATLAB can find ParseSNCprm
-if exist('ParseSNCprm', 'file') ~= 2
+% Check if MATLAB can find ParseSNCprm. This feature can be tested by
+% executing FieldUniformity('unitParseSNCprm')
+if exist('ParseSNCprm', 'file') ~= 2 || (~isempty(varargin) && ...
+        strcmp(varargin{1}, 'unitParseSNCprm'))
     
     % If not, throw an error
     Event(['The snc_extract submodule does not exist in the search path. ', ...
