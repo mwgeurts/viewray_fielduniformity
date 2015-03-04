@@ -4,9 +4,9 @@ function Event(varargin)
 % throw an error
 %
 % The following variables are required for proper execution: 
-%   str: event to be logged (without final newline)
-%   varargin{2} (optional): varargin{2} of event (INFO, WARN, ERROR, etc) 
-%   guihandle (optional): handle to uitable handle to display events
+%   varargin{1}: event to be logged (without final newline)
+%   varargin{2} (optional): type of event (INFO, WARN, ERROR, etc) 
+%   varargin{3} (optional): handle to uitable handle to display events
 %
 % Author: Mark Geurts, mark.w.geurts@gmail.com
 % Copyright (C) 2015 University of Wisconsin Board of Regents
@@ -44,6 +44,7 @@ str = strsplit(varargin{1},'\n');
 % not, still write event to stdout but inform that the file write write was
 % unsuccessful.
 try
+    
     % Attempt to obtain a write handle to the log file
     fid = fopen('log.txt','a');
     
@@ -53,6 +54,7 @@ try
     
     % If multiple lines exist in the event
     for i = 2:size(str,2)
+        
         % If the line is not empty, write additional line tab-justified
         % with first line
         if ~strcmp(str{i}, ''); fprintf(fid, '\t\t\t\t%s\n', str{i}); end
@@ -67,43 +69,51 @@ try
     
     % If multiple lines exist in the event
     for i = 2:size(str,2)
+        
         % If the line is not empty, write additional line tab-justified
         % with first line
         if ~strcmp(str{i}, ''); fprintf('\t\t\t\t%s\n', str{i}); end
     end
     
     % If UI handle is present, add event to UI cell string
-    if ~isempty(handle) && strcmp(varargin{2},'ERROR')
+    if ~isempty(handle) && strcmp(varargin{2}, 'ERROR')
+        
         % If error, add event in red
         set(handle, 'Data', vertcat({['<html><font color="red">', ...
-            datestr(now,'yyyy-mm-dd HH:MM:SS'),'</font></html>'], ...
-            ['<html><font color="red">',varargin{2},'</font></html>'], ...
-            ['<html><font color="red">',str{1},'</font></html>']}, ...
+            datestr(now,'yyyy-mm-dd HH:MM:SS'), '</font></html>'], ...
+            ['<html><font color="red">', varargin{2}, '</font></html>'], ...
+            ['<html><font color="red">', str{1}, '</font></html>']}, ...
             get(handle, 'Data')));
-    elseif ~isempty(handle) && strcmp(varargin{2},'WARN')
+        
+    elseif ~isempty(handle) && strcmp(varargin{2}, 'WARN')
+        
         % If warn, add event in orange
         set(handle, 'Data', vertcat({['<html><font color="orange">', ...
             datestr(now,'yyyy-mm-dd HH:MM:SS'),'</font></html>'], ...
-            ['<html><font color="orange">',varargin{2},'</font></html>'], ...
-            ['<html><font color="orange">',str{1},'</font></html>']}, ...
+            ['<html><font color="orange">', varargin{2}, '</font></html>'], ...
+            ['<html><font color="orange">', str{1}, '</font></html>']}, ...
             get(handle, 'Data')));
+        
     elseif ~isempty(handle)
+        
         % Otherwise, add event in green
         set(handle, 'Data', vertcat({['<html><font color="green">', ...
-            datestr(now,'yyyy-mm-dd HH:MM:SS'),'</font></html>'], ...
-            ['<html><font color="green">',varargin{2},'</font></html>'], ...
-            ['<html><font color="green">',str{1},'</font></html>']}, ...
+            datestr(now,'yyyy-mm-dd HH:MM:SS'), '</font></html>'], ...
+            ['<html><font color="green">', varargin{2}, '</font></html>'], ...
+            ['<html><font color="green">', str{1}, '</font></html>']}, ...
             get(handle, 'Data')));
     end
     
 % Catch an exception that may be thrown if write handle could not be set
 catch
+    
     % Write event to stdout
     fprintf('%s\t%s\t%s [not written to log]\n', ...
         datestr(now,'yyyy-mm-dd HH:MM:SS'), varargin{2}, str{1});
     
     % If multiple lines exist in the event
     for i = 2:size(str,2)
+        
         % If the line is not empty, write additional line tab-justified
         % with first line
         if ~strcmp(str{i}, ''); fprintf('\t\t\t\t%s\n', str{i}); end

@@ -561,15 +561,23 @@ footnotes{length(footnotes)+1} = ['<sup>1</sup>Prior to Version 1.1 ', ...
 
 %% TEST 3/4: Code Analyzer Messages, Cumulative Cyclomatic Complexity
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test uses the checkcode() MATLAB function to check
+%   each function used by the application and return any Code Analyzer
+%   messages that result.  The cumulative cyclomatic complexity is also
+%   computed for each function and summed to determine the total
+%   application complexity.  Although this test does not reference any
+%   particular requirements, it is used during development to help identify
+%   high risk code.
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: none 
 %
 % INPUT DATA: No input data required
 %
-% CONDITION A (+): 
+% CONDITION A (+): Report any code analyzer messages for all functions
+%   called by FieldUniformity
 %
-% CONDITION B (-): 
+% CONDITION B (+): Report the cumulative cyclomatic complexity for all
+%   functions called by FieldUniformity
 
 % Search for required functions
 fList = matlab.codetools.requiredFilesAndProducts('FieldUniformity.m');
@@ -624,7 +632,7 @@ results{size(results,1)+1,1} = '4';
 results{size(results,1),2} = 'Cumulative Cyclomatic Complexity';
 results{size(results,1),3} = sprintf('%i', comp);
 
-%% TEST 5: Reference Data Loads Successfully, Load Time
+%% TEST 5: Reference Data Loads Successfully
 %
 % DESCRIPTION: 
 %
