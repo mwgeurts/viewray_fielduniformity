@@ -79,6 +79,8 @@ pf = fail;
 % Attempt to open application without submodule
 try
     FieldUniformity('unitParseSNCprm');
+
+% If it fails to open, the test passed
 catch
     pf = pass;
 end
@@ -91,9 +93,8 @@ try
     t = tic;
     h = FieldUniformity;
     time = sprintf('%0.1f sec', toc(t));
-    if strcmp(pf, pass)
-        pf = pass;
-    end
+
+% If it fails to open, the test failed  
 catch
     pf = fail;
 end
@@ -204,15 +205,21 @@ results{size(results,1),3} = sprintf('%i', comp);
 
 %% TEST 5: Reference Data Loads Successfully
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test verifies that the reference data load
+% subfunction runs without error.
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: F002
 %
-% INPUT DATA: No input data required
+% INPUT DATA: file names of reference profiles.  In version 1.1.0 and
+%   later, this is stored in handles.references.  In earlier versions the
+%   file name is written into the function call.
 %
-% CONDITION A (+): 
+% CONDITION A (+): Execute LoadProfilerReference (version 1.1.0 and later)
+%   or LoadReferenceProfiles with a valid reference DICOM file and verify
+%   that the application executes correctly.
 %
-% CONDITION B (-): 
+% CONDITION B (-): Execute the same function with invalid inputs and verify
+%   that the function fails.
 
 % Retrieve guidata
 data = guidata(h);
@@ -224,12 +231,29 @@ if version >= 010100
     try
         pf = pass;
         LoadProfilerDICOMReference(data.references, '90');
+    
+    % If it errors, record fail
     catch
-        
-        % If it errors, record fail
         pf = fail;
     end
   
+    % Execute LoadProfilerReference with no inputs in try/catch statement
+    try
+        LoadProfilerDICOMReference();
+        pf = fail;
+    catch
+        % If it fails, test passed
+    end
+    
+    % Execute LoadProfilerReference with one incorrect input in try/catch 
+    % statement
+    try
+        LoadProfilerDICOMReference('asd');
+        pf = fail;
+    catch
+        % If it fails, test passed
+    end
+    
 % If version < 1.1.0    
 else
     
@@ -238,10 +262,19 @@ else
         pf = pass;
         LoadReferenceProfiles(...
             'AP_27P3X27P3_PlaneDose_Vertical_Isocenter.dcm');
+    
+    % If it errors, record fail
     catch
-        
-        % If it errors, record fail
         pf = fail;
+    end
+    
+    % Execute LoadReferenceProfiles with one incorrect input in try/catch 
+    % statement
+    try
+        LoadReferenceProfiles('asd');
+        pf = fail;
+    catch
+        % If it fails, test passed
     end
 end
 
@@ -250,18 +283,23 @@ results{size(results,1)+1,1} = '5';
 results{size(results,1),2} = 'Reference Data Loads Successfully';
 results{size(results,1),3} = pf;
 
-
 %% TEST 6/7: Reference Data Identical
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test verifies that the primary axis data (MLC X,
+%   MLC Y) extracted from the reference data is identical to its expected
+%   value.  For this test equivalency is defined as being within 1%/0.1mm
+%   using a Gamma analysis.
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: F002
 %
-% INPUT DATA: No input data required
+% INPUT DATA: Validated expected MLC X (data.refdata.xdata) and MLC Y 
+%   profile data (data.refdata.ydata)
 %
-% CONDITION A (+): 
+% CONDITION A (+): The extracted reference data matches expected MLC X and
+%   MLC Y data exactly (version 1.1.0 and later) or within 1%/0.1 mm.
 %
-% CONDITION B (-): 
+% CONDITION B (-): Modified reference data no longer matches expected MLC X
+%   and MLC Y data.
 
 % Retrieve guidata
 data = guidata(h);
@@ -274,15 +312,22 @@ if version >= 010100
 
         % If current value equals the reference
         if isequal(data.refdata, varargin{3}.refdata)
-
-            % Record pass
             xpf = pass;
             ypf = pass;
+        
+        % Otherwise, it failed
         else
-            
-            % Record fail
             xpf = fail;
-            ypf = pass;
+            ypf = fail;
+        end
+        
+        % Modify refdata
+        data.refdata(1,1) = 0;
+        
+        % Verify current value now fails
+        if isequal(data.refdata, varargin{3}.refdata)
+            xpf = fail;
+            ypf = fail;
         end
 
     % Otherwise, no reference data exists
@@ -320,14 +365,19 @@ else
 
         % If the gamma rate is less than one
         if max(gamma) < 1
-
-            % Record pass
             xpf = pass;
         else
-            
-            % Record fail
             xpf = fail;
         end
+        
+        % Calc gamma again with different start value
+        target.start = target.start + 1;
+        gamma = CalcGamma(ref, target, 1, 0.01, 0);
+        
+        % If the gamma rate is less than one
+        if max(gamma) < 1
+            xpf = fail;
+        end 
 
         % Compute MLC Y gamma using 1%/0.1 mm and global method
         target.start = data.refY(1,1)/10;
@@ -342,14 +392,19 @@ else
 
         % If the gamma rate is less than one
         if max(gamma) < 1
-
-            % Record pass
             ypf = pass;
         else
-            
-            % Record fail
             ypf = fail;
         end
+        
+        % Calc gamma again with different start value
+        target.start = target.start + 1;
+        gamma = CalcGamma(ref, target, 1, 0.01, 0);
+        
+        % If the gamma rate is less than one
+        if max(gamma) < 1
+            ypf = fail;
+        end 
 
     % Otherwise, no reference data exists
     else
@@ -373,15 +428,29 @@ footnotes{length(footnotes)+1} = ['<sup>2</sup>[#10](../issues/10) ', ...
 
 %% TEST 8/9: H1 Browse Loads Data Successfully/Load Time
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test verifies a callback exists for the H1 browse
+%   button and executes it under unit test conditions (such that a file 
+%   selection dialog box is skipped), simulating the process of a user
+%   selecting input data.  The time 
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: U002, U003, U004, U005, U006, F003, F004, P002
 %
-% INPUT DATA: No input data required
+% INPUT DATA: PRM file to be loaded (varargin{2})
 %
-% CONDITION A (+): 
+% CONDITION A (+): The callback for the H1 browse button can be executed
+%   without error when a valid filename is provided
 %
-% CONDITION B (-): 
+% CONDITION B (-): The callback will throw an error if an invalid filename
+%   is provided
+%
+% CONDITION C (+): The callback will return without error when no filename
+%   is provided
+%
+% CONDITION D (+): Upon receiving a valid filename, the PRM data will be
+%   automatically processed, storing a structure to data.h1results
+%
+% CONDITION E (+): Report the time taken to execute the browse callback and 
+%   parse the data
 
 % Retrieve guidata
 data = guidata(h);
@@ -389,10 +458,9 @@ data = guidata(h);
 % Retrieve callback to H1 browse button
 callback = get(data.h1browse, 'Callback');
 
-% Set unit path/name
-[path, name, ext] = fileparts(varargin{2});
-data.unitpath = path;
-data.unitname = [name, ext];
+% Set empty unit path/name
+data.unitpath = '';
+data.unitname = '';
 
 % Force specific gamma criteria (3%/1mm)
 data.abs = 3;
@@ -416,17 +484,62 @@ guidata(h, data);
 
 % Execute callback in try/catch statement
 try
-    t = tic;
     pf = pass;
     callback(data.h1browse, data);
-catch
 
-    % If it errors, record fail
+% If it errors, record fail
+catch
+    pf = fail;
+end
+
+% Set invalid unit path/name
+data.unitpath = '/';
+data.unitname = 'asd';
+
+% Store guidata
+guidata(h, data);
+
+% Execute callback in try/catch statement (this should fail)
+try
+    callback(data.h1browse, data);
+    pf = fail;
+    
+% If it errors
+catch
+	% The test passed
+end
+
+% Set unit path/name
+[path, name, ext] = fileparts(varargin{2});
+data.unitpath = path;
+data.unitname = [name, ext];
+
+% Store guidata
+guidata(h, data);
+
+% Execute callback in try/catch statement
+try
+    t = tic;
+    callback(data.h1browse, data);
+
+% If it errors, record fail
+catch
     pf = fail;
 end
 
 % Record completion time
 time = sprintf('%0.1f sec', toc(t));
+
+% Retrieve guidata
+data = guidata(h);
+
+% Verify that h1results exists and the file name matches the input data
+if strcmp(pf, pass) && ~isempty(data.h1results) && ...
+        strcmp(data.h1file.String, fullfile(varargin{2}))
+    pf = pass;
+else
+    pf = fail;
+end
 
 % Add result
 results{size(results,1)+1,1} = '8';
@@ -440,7 +553,7 @@ results{size(results,1),3} = time;
 
 %% TEST 10: MLC X Profile Identical
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test
 %
 % RELEVANT REQUIREMENTS:
 %
@@ -1462,7 +1575,7 @@ results{size(results,1),3} = pf;
 %
 % DESCRIPTION: 
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: D001, D002, D003, D004
 %
 % INPUT DATA: No input data required
 %
