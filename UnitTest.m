@@ -27,12 +27,20 @@ function varargout = UnitTest(varargin)
 %       subsequent executions of UnitTest as varargin{3} to compare results
 %       between versions (or to a priori validated reference data).
 
+%% Initialize Unit Testing
 % Initialize static test result text variables
 pass = 'Pass';
 fail = 'Fail';
 unk = 'N/A';
 
-%% Start Unit Testing
+% Check if MATLAB can find CalcGamma (used by the unit tests)
+if exist('CalcGamma', 'file') ~= 2
+    
+    % If not, throw an error
+    Event('The CalcGamma submodule does not exist in the path.', ...
+        'ERROR');
+end
+
 % Initialize preamble text
 preamble = {
     '| Input Data | Value |'
