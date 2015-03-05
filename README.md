@@ -10,7 +10,7 @@ The ViewRay Field Uniformity-Timing Check application loads Monte Carlo treatmen
 
 ## Installation
 
-This application can be installed as a MATLAB App or by cloning this git repository.  
+This application can be installed as a MATLAB App or by cloning this git repository.  See [Installation and Use](../../wiki/Installation-and-Use) for more details.
 
 ## Usage and Documentation
 
