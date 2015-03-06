@@ -33,14 +33,6 @@ pass = 'Pass';
 fail = 'Fail';
 unk = 'N/A';
 
-% Check if MATLAB can find CalcGamma (used by the unit tests)
-if exist('CalcGamma', 'file') ~= 2
-    
-    % If not, throw an error
-    Event('The CalcGamma submodule does not exist in the path.', ...
-        'ERROR');
-end
-
 % Initialize preamble text
 preamble = {
     '| Input Data | Value |'
@@ -53,22 +45,39 @@ results = cell(0,3);
 % Initialize footnotes cell array
 footnotes = cell(0,1);
 
+% Add snc_extract/gamma submodule to search path
+addpath('./snc_extract/gamma');
+
+% Check if MATLAB can find CalcGamma (used by the unit tests later)
+if exist('CalcGamma', 'file') ~= 2
+    
+    % If not, throw an error
+    Event('The CalcGamma submodule does not exist in the path.', ...
+        'ERROR');
+end
+
 %% TEST 1/2: Application Loads Successfully, Time
 %
 % DESCRIPTION: This unit test attempts to execute the main application
 %   executable and times how long it takes.  This test also verifies that
-%   errors are present if the required submodules do not exist.
+%   errors are present if the required submodules do not exist and that the
+%   print report button is initially disabled.
 %
-% RELEVANT REQUIREMENTS: U001, F001, P001
+% RELEVANT REQUIREMENTS: U001, F001, F021, F027, P001
 %
 % INPUT DATA: No input data required
 %
-% CONDITION A (+): With the appropriate submodules present, attempt to open
-%   the application and verify that it loads without error in the required
-%   time.
+% CONDITION A (+): With the appropriate submodules present, opening the
+%   application andloads without error in the required time
 %
-% CONDITION B (-): With the snc_extract submodule missing, attempt to open
-%   the application and verify that it throws an error
+% CONDITION B (-): With the snc_extract submodule missing, opening the 
+%   application throws an error
+%
+% CONDITION C (-): The print report button is disabled
+%   following application load (the positive condition for this requirement
+%   is tested during unit test 25).
+%
+% CONDITION D (+): Gamma criteria are set upon application load
 
 % Change to directory of version being tested
 cd(varargin{1});
@@ -101,6 +110,17 @@ end
 
 % Retrieve guidata
 data = guidata(h);
+
+% Verify that the print button is disabled
+if ~strcmp(get(data.print_button, 'enable'), 'off')
+    pf = fail;
+end
+
+% Verify that Gamma criteria exist
+if ~isfield(data, 'abs') || ~isfield(data, 'dta') || data.abs == 0 || ...
+        data.dta == 0
+    pf = fail;
+end
 
 % Set unit test flag to 1 (to avoid uigetfile/questdlg/user input)
 data.unitflag = 1; 
@@ -433,10 +453,11 @@ footnotes{length(footnotes)+1} = ['<sup>2</sup>[#10](../issues/10) ', ...
 % DESCRIPTION: This unit test verifies a callback exists for the H1 browse
 %   button and executes it under unit test conditions (such that a file 
 %   selection dialog box is skipped), simulating the process of a user
-%   selecting input data.  The time 
+%   selecting input data.  The time necessary to load the file is also
+%   checked.
 %
-% RELEVANT REQUIREMENTS: U002, U003, U004, U005, U006, F003, F004, P002,
-%   C012
+% RELEVANT REQUIREMENTS: U002, U003, U004, U005, U006, F003, F004, F017, 
+%   F018, P002, C012
 %
 % INPUT DATA: PRM file to be loaded (varargin{2})
 %
@@ -452,8 +473,16 @@ footnotes{length(footnotes)+1} = ['<sup>2</sup>[#10](../issues/10) ', ...
 % CONDITION D (+): Upon receiving a valid filename, the PRM data will be
 %   automatically processed, storing a structure to data.h1results
 %
-% CONDITION E (+): Report the time taken to execute the browse callback and 
+% CONDITION E (+): Upon receiving a valid filename, the filename will be
+%   displayed on the user interface
+%
+% CONDITION F (+): Report the time taken to execute the browse callback and 
 %   parse the data
+%
+% CONDITION G (-): If measured data is provided where the FWHM is too close
+%   to the edge, the application will return a FWHM of 0. 
+%
+% CONDITION H (+): Correlation data will exist in data.h1results.corr
 
 % Retrieve guidata
 data = guidata(h);
@@ -542,6 +571,51 @@ if strcmp(pf, pass) && ~isempty(data.h1results) && ...
     pf = pass;
 else
     pf = fail;
+end
+
+% If version >= 1.1.0, execute SRS-F017 test
+if version >= 010100
+    
+    % Load the SNC profiler data
+    prm = ParseSNCprm(data.unitpath, data.unitname);
+
+    % Adjust the data such that the X axis profile is uniform (no edges)
+    prm.data(:, 5 + (1:prm.num(2))) = ones(size(prm.data,1), prm.num(2)) * 1e7;
+    prm.data(1, 5 + (1:prm.num(2))) = zeros(1, prm.num(2));
+
+    % Run AnalyzeProfilerFields with bad X axis data
+    result = AnalyzeProfilerFields(prm);
+
+    % Verify FWHM is zero
+    if result.xfwhm ~= 0
+        pf = fail;
+    end
+
+    % Adjust the data such that the X axis profile is uniform (no edges)
+    prm.data(:, 5 + (2:prm.num(2)-1)) = ones(size(prm.data,1), prm.num(2)-2) ...
+        * 1e8;
+    prm.data(1, 5 + (1:prm.num(2))) = zeros(1, prm.num(2));
+
+    % Run AnalyzeProfilerFields with bad X axis data
+    result = AnalyzeProfilerFields(prm);
+
+    % Verify FWHM is zero
+    if result.xfwhm ~= 0
+        pf = fail;
+    end
+
+    % Clear temporary variables
+    clear prm result;
+end
+
+% If version >= 1.1.0, execute SRS-F018 test
+if version >= 010100
+    
+    % If correlation data does not exist
+    if ~isfield(data.h1results, 'corr') || ...
+            max(max(max(data.h1results.corr))) == 0
+        pf = fail;
+    end
 end
 
 % Add result
@@ -1477,7 +1551,7 @@ footnotes{length(footnotes)+1} = ['<sup>4</sup>[#11](../issues/11) In ', ...
 %   require the user to visually verify that the plot displays correctly
 %   (and with the correct colors, in the case of SRS-F024).
 %
-% RELEVANT REQUIREMENTS: U009, U011, F014, F015, F023, F024, F025 
+% RELEVANT REQUIREMENTS: U009, U011, F014, F015, F023, F024, F025
 %
 % INPUT DATA: No input data required
 %
@@ -1551,18 +1625,82 @@ results{size(results,1),3} = pf;
 
 %% TEST 21/22: H2/H3 Browse Loads Data Successfully
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test repeats test 8 on the callbacks for Heads 2
+%   and 3 to verify that those GUI features are also functional.
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: U013, F011
 %
-% INPUT DATA: No input data required
+% INPUT DATA: PRM file to be loaded (varargin{2})
 %
-% CONDITION A (+): 
+% CONDITION A (+): The callback for the H2 browse button can be executed
+%   without error when a valid filename is provided
 %
-% CONDITION B (-): 
+% CONDITION B (-): The H2 callback will throw an error if an invalid 
+%   filename is provided
+%
+% CONDITION C (+): The H2 callback will return without error when no 
+%   filename is provided
+%
+% CONDITION D (+): Upon receiving a valid filename, the PRM data will be
+%   automatically processed, storing a structure to data.h2results
+%
+% CONDITION E (+): Upon receiving a valid filename, the H2 filename will be
+%   displayed on the user interface
+%
+% CONDITION F (+): The callback for the H3 browse button can be executed
+%   without error when a valid filename is provided
+%
+% CONDITION G (-): The H3 callback will throw an error if an invalid 
+%   filename is provided
+%
+% CONDITION H (+): The H3 callback will return without error when no 
+%   filename is provided
+%
+% CONDITION I (+): Upon receiving a valid filename, the PRM data will be
+%   automatically processed, storing a structure to data.h3results
+%
+% CONDITION F (+): Upon receiving a valid filename, the H3 filename will be
+%   displayed on the user interface
 
 % Retrieve guidata
 data = guidata(h);
+
+% Retrieve callback to H2 browse button
+callback = get(data.h2browse, 'Callback');
+
+% Set empty unit path/name
+data.unitpath = '';
+data.unitname = '';
+
+% Store guidata
+guidata(h, data);
+
+% Execute callback in try/catch statement
+try
+    pf = pass;
+    callback(data.h2browse, data);
+
+% If it errors, record fail
+catch
+    pf = fail;
+end
+
+% Set invalid unit path/name
+data.unitpath = '/';
+data.unitname = 'asd';
+
+% Store guidata
+guidata(h, data);
+
+% Execute callback in try/catch statement (this should fail)
+try
+    callback(data.h2browse, data);
+    pf = fail;
+    
+% If it errors
+catch
+	% The test passed
+end
 
 % Set unit path/name
 [path, name, ext] = fileparts(varargin{2});
@@ -1572,16 +1710,24 @@ data.unitname = [name, ext];
 % Store guidata
 guidata(h, data);
 
-% Retrieve callback to H2 browse button
-callback = get(data.h2browse, 'Callback');
-
 % Execute callback in try/catch statement
 try
-    pf = pass;
+    t = tic;
     callback(data.h2browse, data);
-catch
 
-    % If callback throws error, record fail
+% If it errors, record fail
+catch
+    pf = fail;
+end
+
+% Retrieve guidata
+data = guidata(h);
+
+% Verify that h1results exists and the file name matches the input data
+if strcmp(pf, pass) && ~isempty(data.h2results) && ...
+        strcmp(data.h2file.String, fullfile(varargin{2}))
+    pf = pass;
+else
     pf = fail;
 end
 
@@ -1593,13 +1739,66 @@ results{size(results,1),3} = pf;
 % Retrieve callback to H3 browse button
 callback = get(data.h3browse, 'Callback');
 
+% Set empty unit path/name
+data.unitpath = '';
+data.unitname = '';
+
+% Store guidata
+guidata(h, data);
+
 % Execute callback in try/catch statement
 try
     pf = pass;
     callback(data.h3browse, data);
-catch
 
-    % If callback throws error, record fail
+% If it errors, record fail
+catch
+    pf = fail;
+end
+
+% Set invalid unit path/name
+data.unitpath = '/';
+data.unitname = 'asd';
+
+% Store guidata
+guidata(h, data);
+
+% Execute callback in try/catch statement (this should fail)
+try
+    callback(data.h3browse, data);
+    pf = fail;
+    
+% If it errors
+catch
+	% The test passed
+end
+
+% Set unit path/name
+[path, name, ext] = fileparts(varargin{2});
+data.unitpath = path;
+data.unitname = [name, ext];
+
+% Store guidata
+guidata(h, data);
+
+% Execute callback in try/catch statement
+try
+    t = tic;
+    callback(data.h3browse, data);
+
+% If it errors, record fail
+catch
+    pf = fail;
+end
+
+% Retrieve guidata
+data = guidata(h);
+
+% Verify that h1results exists and the file name matches the input data
+if strcmp(pf, pass) && ~isempty(data.h3results) && ...
+        strcmp(data.h3file.String, fullfile(varargin{2}))
+    pf = pass;
+else
     pf = fail;
 end
 
@@ -1610,15 +1809,76 @@ results{size(results,1),3} = pf;
 
 %% TEST 23/24: H2/H3 Figures Functional
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test repeats test 20 for the plot display
+%   selection and figure user interface features for Heads 2 and 3.
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: U009, U011, U013, F014, F015, F023, F024, F025
 %
 % INPUT DATA: No input data required
 %
-% CONDITION A (+): 
+% CONDITION A (+): The time-dependent central channel response is displayed
+%   when h2results data is present.
 %
-% CONDITION B (-): 
+% CONDITION B (-): The time-dependent response is not displayed when
+%   h2results data is not present, but exits gracefully.
+%
+% CONDITION C (+): The MLC X Gamma index, measured, and reference profiles
+%   are displayed when h2results data is present.
+%
+% CONDITION D (-): The MLC X Gamma index, measured, and reference profiles
+%   are not displayed when h2results data is not present.
+%
+% CONDITION E (+): The MLC Y Gamma index, measured, and reference profiles
+%   are displayed when h2results data is present.
+%
+% CONDITION F (-): The MLC Y Gamma index, measured, and reference profiles
+%   are not displayed when h2results data is not present.
+%
+% CONDITION G (+): The positive diagonal Gamma index, measured, and 
+%   reference profiles are displayed when h2results data is present.
+%
+% CONDITION H (-): The positive diagonal Gamma index, measured, and 
+%   reference profiles are not displayed when h2results data is not 
+%   present.
+%
+% CONDITION I (+): The negative diagonal Gamma index, measured, and 
+%   reference profiles are displayed when h2results data is present.
+%
+% CONDITION J (-): The negative diagonal Gamma index, measured, and 
+%   reference profiles are not displayed when h2results data is not 
+%   present.
+%
+% CONDITION K (+): The time-dependent central channel response is displayed
+%   when h3results data is present.
+%
+% CONDITION L (-): The time-dependent response is not displayed when
+%   h3results data is not present, but exits gracefully.
+%
+% CONDITION M (+): The MLC X Gamma index, measured, and reference profiles
+%   are displayed when h3results data is present.
+%
+% CONDITION N (-): The MLC X Gamma index, measured, and reference profiles
+%   are not displayed when h3results data is not present.
+%
+% CONDITION O (+): The MLC Y Gamma index, measured, and reference profiles
+%   are displayed when h3results data is present.
+%
+% CONDITION P (-): The MLC Y Gamma index, measured, and reference profiles
+%   are not displayed when h3results data is not present.
+%
+% CONDITION Q (+): The positive diagonal Gamma index, measured, and 
+%   reference profiles are displayed when h3results data is present.
+%
+% CONDITION R (-): The positive diagonal Gamma index, measured, and 
+%   reference profiles are not displayed when h3results data is not 
+%   present.
+%
+% CONDITION S (+): The negative diagonal Gamma index, measured, and 
+%   reference profiles are displayed when h3results data is present.
+%
+% CONDITION T (-): The negative diagonal Gamma index, measured, and 
+%   reference profiles are not displayed when h3results data is not 
+%   present.
 
 % Retrieve guidata
 data = guidata(h);
@@ -1640,6 +1900,9 @@ try
         
         % Execute callback
         callback(data.h2display, data);
+        
+        % Execute callback without results data
+        callback(data.h2display, rmfield(data, 'h2results'));
     end
 catch
     
@@ -1669,6 +1932,9 @@ try
         
         % Execute callback
         callback(data.h3display, data);
+        
+        % Execute callback without results data
+        callback(data.h3display, rmfield(data, 'h3results'));
     end
 catch
     
@@ -1681,17 +1947,25 @@ results{size(results,1)+1,1} = '24';
 results{size(results,1),2} = 'H3 Figure Display Functional';
 results{size(results,1),3} = pf;
 
-%% TEST 25/26: Print Report Functional (> 1.1.0)
+%% TEST 25/26: Print Report Functional
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test evaluates the print report feature by
+%   executing the print report button callback.  Note, the contents and 
+%   clarity of the report are verified manually by the user. This unit test
+%   is only applicable to Version 1.1.0 and later (when reports became 
+%   available).
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: U014, F027, F028, F029, F030, F031, F032, F033,
+%   F034
 %
 % INPUT DATA: No input data required
 %
-% CONDITION A (+): 
+% CONDITION A (+): The print report button is enabled
 %
-% CONDITION B (-): 
+% CONDITION B (+/-): A report is generated without error and with the user
+%   name (or "Unit test" if whoami does not exist), current date and time,
+%   SNC version/collector model/serial, MLC X/Y Gamma profiles, and
+%   statistics.
 
 % If version >= 1.1.0
 if version >= 010100
@@ -1717,9 +1991,16 @@ if version >= 010100
         % If callback fails, record failure
         pf = fail; 
     end
-    
+
     % Record completion time
     time = sprintf('%0.1f sec', toc(t)); 
+    
+    % If the print report button is disabled, the test fails
+    if ~strcmp(get(data.print_button, 'enable'), 'on')
+        pf = fail;
+    end
+    
+    
 
 % If version < 1.1.0
 else
@@ -1741,16 +2022,37 @@ results{size(results,1),3} = time;
 
 %% TEST 27/28/29: Clear All Buttons Functional
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test evaluates the Clear All Data button on the
+%   user interface for each head and verifies that all data is successfully
+%   cleared from the user interface and internally.
 %
-% RELEVANT REQUIREMENTS: C001-C014 (assuming all prior unit tests are
-%   completed with each test suite on each system)
+% RELEVANT REQUIREMENTS: U015, F035, F036
 %
 % INPUT DATA: No input data required
 %
-% CONDITION A (+): 
+% CONDITION A (-): Prior to executing the H1 clear button callback, the
+%   file location, plot dropdown menu, plot, statistics, and internal 
+%   variables (h1results, h1refresults) contain data. 
 %
-% CONDITION B (-): 
+% CONDITION B (+): After executing the H1 clear button, the file location, 
+%   plot dropdown menu, plot, statistics, and internal variables 
+%   (h1results, h1refresults) become empty.
+%
+% CONDITION C (-): Prior to executing the H2 clear button callback, the
+%   file location, plot dropdown menu, plot, statistics, and internal 
+%   variables (h2results, h2refresults) contain data. 
+%
+% CONDITION D (+): After executing the H2 clear button, the file location, 
+%   plot dropdown menu, plot, statistics, and internal variables 
+%   (h2results, h2refresults) become empty.
+%
+% CONDITION E (-): Prior to executing the H3 clear button callback, the
+%   file location, plot dropdown menu, plot, statistics, and internal 
+%   variables (h3results, h3refresults) contain data. 
+%
+% CONDITION F (+): After executing the H3 clear button, the file location, 
+%   plot dropdown menu, plot, statistics, and internal variables 
+%   (h3results, h3refresults) become empty.
 
 % Retrieve guidata
 data = guidata(h);
@@ -1758,11 +2060,19 @@ data = guidata(h);
 % Retrieve callback to H1 clear button
 callback = get(data.h1clear, 'Callback');
 
+% Start with pass
+pf = pass;
+
+% Verify file location, plot dropdown menu, plot, statistics, and internal 
+% variables exist
+if isempty(data.h1file.String) || isempty(data.h1results) || ...
+        isempty(data.h1refresults) || data.h1display.Value == 1 || ...
+        isequal(data.h1table, cell(10, 4))
+    pf = fail;
+end
+
 % Execute callback in try/catch statement
 try
-    
-    % Start with pass
-    pf = pass;
     
     % Execute callback
     callback(data.h1clear, h);
@@ -1772,19 +2082,38 @@ catch
     pf = fail;
 end
 
+% Retrieve guidata
+data = guidata(h);
+
+% Verify file location, plot dropdown menu, plot, statistics, and internal 
+% variables are now cleared
+if ~isempty(data.h1file.String) || ~isempty(data.h1results) || ...
+        ~isempty(data.h1refresults) || ~data.h1display.Value == 1 || ...
+        ~isequal(data.h1table, cell(10, 4))
+    pf = fail;
+end
+
 % Add result
 results{size(results,1)+1,1} = '27';
 results{size(results,1),2} = 'H1 Clear Button Functional';
 results{size(results,1),3} = pf;
 
-% Retrieve callback to H1 clear button
+% Retrieve callback to H2 clear button
 callback = get(data.h2clear, 'Callback');
+
+% Start with pass
+pf = pass;
+
+% Verify file location, plot dropdown menu, plot, statistics, and internal 
+% variables exist
+if isempty(data.h2file.String) || isempty(data.h2results) || ...
+        isempty(data.h2refresults) || data.h2display.Value == 1 || ...
+        isequal(data.h2table, cell(10, 4))
+    pf = fail;
+end
 
 % Execute callback in try/catch statement
 try
-    
-    % Start with pass
-    pf = pass;
     
     % Execute callback
     callback(data.h2clear, h);
@@ -1794,25 +2123,55 @@ catch
     pf = fail;
 end
 
+% Retrieve guidata
+data = guidata(h);
+
+% Verify file location, plot dropdown menu, plot, statistics, and internal 
+% variables are now cleared
+if ~isempty(data.h2file.String) || ~isempty(data.h2results) || ...
+        ~isempty(data.h2refresults) || ~data.h2display.Value == 1 || ...
+        ~isequal(data.h2table, cell(10, 4))
+    pf = fail;
+end
+
 % Add result
 results{size(results,1)+1,1} = '28';
 results{size(results,1),2} = 'H2 Clear Button Functional';
 results{size(results,1),3} = pf;
 
-% Retrieve callback to H1 clear button
+% Retrieve callback to H3 clear button
 callback = get(data.h3clear, 'Callback');
+
+% Start with pass
+pf = pass;
+
+% Verify file location, plot dropdown menu, plot, statistics, and internal 
+% variables exist
+if isempty(data.h3file.String) || isempty(data.h3results) || ...
+        isempty(data.h3refresults) || data.h3display.Value == 1 || ...
+        isequal(data.h3table, cell(10, 4))
+    pf = fail;
+end
 
 % Execute callback in try/catch statement
 try
-    
-    % Start with pass
-    pf = pass;
     
     % Execute callback
     callback(data.h3clear, h);
 catch
     
     % Callback failed, so record error
+    pf = fail;
+end
+
+% Retrieve guidata
+data = guidata(h);
+
+% Verify file location, plot dropdown menu, plot, statistics, and internal 
+% variables are now cleared
+if ~isempty(data.h3file.String) || ~isempty(data.h3results) || ...
+        ~isempty(data.h3refresults) || ~data.h3display.Value == 1 || ...
+        ~isequal(data.h3table, cell(10, 4))
     pf = fail;
 end
 
@@ -1823,15 +2182,14 @@ results{size(results,1),3} = pf;
 
 %% TEST 30: Documentation Exists
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test checks that a README file is present.  The
+% contents of the README are manually verified by the user.
 %
 % RELEVANT REQUIREMENTS: D001, D002, D003, D004
 %
 % INPUT DATA: No input data required
 %
-% CONDITION A (+): 
-%
-% CONDITION B (-): 
+% CONDITION A (+): A file named README.md exists in the file directory.
 
 % Look for README.md
 fid = fopen('README.md', 'r');

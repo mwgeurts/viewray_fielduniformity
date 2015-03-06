@@ -61,6 +61,12 @@ Event(['Initializing report file ', ...
     char(fullfile(pwd, strcat(report, '_', v{1}, '.md')))], 'UNIT');
 fid = fopen(char(fullfile(pwd, strcat(report, '_', v{1}, '.md'))), 'wt');
 
+% If the report file could not be created
+if fid < 3
+    Event([char(fullfile(pwd, strcat(report, '_', v{1}, '.md'))), ...
+        ' could not be created'], 'ERROR');
+end
+
 %% Write table of contents
 Event('Writing table of contents', 'UNIT');
 fprintf(fid, '## Contents\n\n');
