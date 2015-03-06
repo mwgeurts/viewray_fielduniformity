@@ -75,6 +75,7 @@ switch get(handles.([head, 'display']),'Value')
     
     %% Plot MLC X profile
     case 2
+        
         % Log selection
         Event('MLC X Profile selected for display');
         
@@ -120,6 +121,7 @@ switch get(handles.([head, 'display']),'Value')
      
     %% Plot MLC Y profile   
     case 3
+        
         % Log selection
         Event('MLC Y Profile selected for display');
         
@@ -165,6 +167,7 @@ switch get(handles.([head, 'display']),'Value')
     
     %% Plot positive diagonal profile   
     case 4
+        
         % Log selection
         Event('Positive Diagonal Profile selected for display');
         
@@ -210,6 +213,7 @@ switch get(handles.([head, 'display']),'Value')
     
     %% Plot negative diagonal profile  
     case 5
+        
         % Log selection
         Event('Negative Diagonal Profile selected for display');
         
@@ -255,6 +259,7 @@ switch get(handles.([head, 'display']),'Value')
     
     %% Plot time profile
     case 6
+        
         % Log selection
         Event('Timing Profile selected for display');
         

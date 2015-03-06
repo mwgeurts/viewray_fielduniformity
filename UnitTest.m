@@ -288,9 +288,11 @@ results{size(results,1),3} = pf;
 % DESCRIPTION: This unit test verifies that the primary axis data (MLC X,
 %   MLC Y) extracted from the reference data is identical to its expected
 %   value.  For this test equivalency is defined as being within 1%/0.1mm
-%   using a Gamma analysis.
+%   using a Gamma analysis.  For versions prior to 1.1.0, the reference
+%   profile is compared to the first expected reference profile (which is
+%   assumed to be 27.3 cm x 27.3 cm).
 %
-% RELEVANT REQUIREMENTS: F002
+% RELEVANT REQUIREMENTS: F002, C013, C014
 %
 % INPUT DATA: Validated expected MLC X (data.refdata.xdata) and MLC Y 
 %   profile data (data.refdata.ydata)
@@ -433,7 +435,8 @@ footnotes{length(footnotes)+1} = ['<sup>2</sup>[#10](../issues/10) ', ...
 %   selection dialog box is skipped), simulating the process of a user
 %   selecting input data.  The time 
 %
-% RELEVANT REQUIREMENTS: U002, U003, U004, U005, U006, F003, F004, P002
+% RELEVANT REQUIREMENTS: U002, U003, U004, U005, U006, F003, F004, P002,
+%   C012
 %
 % INPUT DATA: PRM file to be loaded (varargin{2})
 %
@@ -553,15 +556,21 @@ results{size(results,1),3} = time;
 
 %% TEST 10: MLC X Profile Identical
 %
-% DESCRIPTION: This unit test
+% DESCRIPTION: This unit test compares the SNC IC Profiler Y-axis data to
+%   an expected value to validate that the data is extracted from the PRM
+%   data and that corrections (array calibration, ignored detectors, etc)
+%   are processed correctly.  Note, in versions prior to 1.1.0 the Y-axis
+%   data is stored as H1X, where X refers to the MLC axis.
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: F005, F007, F008
 %
-% INPUT DATA: No input data required
+% INPUT DATA: Expected IC Profiler Y-axis data (varargin{3}.ydata)
 %
-% CONDITION A (+): 
+% CONDITION A (+): Extracted Y-axis data exactly matches expected data
+%   (Version 1.1.0 or later) or is within 0.1%
 %
-% CONDITION B (-): 
+% CONDITION B (-): Extracted X-axis data does not match expected Y-axis 
+%   data using the same tolerance
 
 % Retrieve guidata
 data = guidata(h);
@@ -575,12 +584,16 @@ if version >= 010100
         % If current value equals the reference
         if isequal(data.h1results.ydata(1,:), varargin{3}.ydata(1,:)) && ...
                 isequal(data.h1results.ydata(2,:), varargin{3}.ydata(2,:))
-
-            % Record pass
             pf = pass;
+        
+        % Otherwise the test fails
         else
-
-            % Record fail
+            pf = fail;
+        end
+        
+        % If the current xdata equals the reference, record failure
+        if isequal(data.h1results.xdata(1,:), varargin{3}.ydata(1,:)) && ...
+                isequal(data.h1results.xdata(2,:), varargin{3}.ydata(2,:))
             pf = fail;
         end
 
@@ -607,12 +620,17 @@ else
         % If current value equals the reference to within 0.1%
         if isequal(data.h1X(1,:)/10, varargin{3}.ydata(1,:)) && ...
                 max(abs(data.h1X(2,:) - varargin{3}.ydata(2,:))) < 0.001
-
-            % Record pass
             pf = pass;
+        
+        % Otherwise, the test fails
         else
-
-            % Record fail
+            pf = fail;
+        end
+        
+        % If current x data equals the reference to within 0.1%, record
+        % failure
+        if isequal(data.h1Y(1,:)/10, varargin{3}.ydata(1,:)) && ...
+                max(abs(data.h1Y(2,:) - varargin{3}.ydata(2,:))) < 0.001
             pf = fail;
         end
 
@@ -629,15 +647,21 @@ results{size(results,1),3} = pf;
 
 %% TEST 11: MLC Y Profile Identical
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test compares the SNC IC Profiler X-axis data to
+%   an expected value to validate that the data is extracted from the PRM
+%   data and that corrections (array calibration, ignored detectors, etc)
+%   are processed correctly.  Note, in versions prior to 1.1.0 the X-axis
+%   data is stored as H1Y, where Y refers to the MLC axis.
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: F005, F007, F008
 %
-% INPUT DATA: No input data required
+% INPUT DATA: Expected IC Profiler X-axis data (varargin{3}.xdata)
 %
-% CONDITION A (+): 
+% CONDITION A (+): Extracted X-axis data exactly matches expected data
+%   (Version 1.1.0 or later) or is within 0.1%
 %
-% CONDITION B (-): 
+% CONDITION B (-): Extracted Y-axis data does not match expected Y-axis 
+%   data using the same tolerance
 
 % Retrieve guidata
 data = guidata(h);
@@ -651,12 +675,16 @@ if version >= 010100
         % If current value equals the reference
         if isequal(data.h1results.xdata(1,:), varargin{3}.xdata(1,:)) && ...
                 isequal(data.h1results.xdata(2,:), varargin{3}.xdata(2,:))
-
-            % Record pass
             pf = pass;
+        
+        % Otherwise the test fails
         else
-
-            % Record fail
+            pf = fail;
+        end
+        
+        % If the current xdata equals the reference, record failure
+        if isequal(data.h1results.ydata(1,:), varargin{3}.xdata(1,:)) && ...
+                isequal(data.h1results.ydata(2,:), varargin{3}.xdata(2,:))
             pf = fail;
         end
 
@@ -679,12 +707,17 @@ else
         % If current value equals the reference to within 0.1%
         if isequal(data.h1Y(1,:)/10, varargin{3}.xdata(1,:)) && ...
                 max(abs(data.h1Y(2,:) - varargin{3}.xdata(2,:))) < 0.001
-
-            % Record pass
             pf = pass;
+        
+        % Otherwise, the test fails
         else
-
-            % Record fail
+            pf = fail;
+        end
+        
+        % If current x data equals the reference to within 0.1%, record
+        % failure
+        if isequal(data.h1X(1,:)/10, varargin{3}.xdata(1,:)) && ...
+                max(abs(data.h1X(2,:) - varargin{3}.xdata(2,:))) < 0.001
             pf = fail;
         end
 
@@ -699,17 +732,25 @@ results{size(results,1)+1,1} = '11';
 results{size(results,1),2} = 'MLC Y Profile within 0.1%';
 results{size(results,1),3} = pf;
 
-%% TEST 12: Positive Diagonal Profile Identical (> 1.1.0)
+%% TEST 12: Positive Diagonal Profile Identical
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test compares the SNC IC Profiler positive 
+%   diagonal data to an expected value to validate that the data is 
+%   extracted from the PRM data and that corrections (array calibration, 
+%   ignored detectors, etc) are processed correctly.  This test is only
+%   applicable in Version 1.1.0 and later (in prior versions diagonals were
+%   not extracted).
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: F005, F007, F008
 %
-% INPUT DATA: No input data required
+% INPUT DATA: Expected IC Profiler positive diagonal data 
+%   (varargin{3}.pdiag)
 %
-% CONDITION A (+): 
+% CONDITION A (+): Extracted positive diagonal data exactly matches 
+%   expected data
 %
-% CONDITION B (-): 
+% CONDITION B (-): Extracted negative diagonal data does not match
+%   expected data
 
 % Retrieve guidata
 data = guidata(h);
@@ -723,15 +764,19 @@ if version >= 010100
         % If current value equals the reference
         if isequal(data.h1results.pdiag(1,:), varargin{3}.pdiag(1,:)) && ...
                 isequal(data.h1results.pdiag(2,:), varargin{3}.pdiag(2,:))
-
-            % Record pass
             pf = pass;
+        
+        % Otherwise the test fails
         else
-
-            % Record fail
             pf = fail;
         end
 
+        % If the negative diagonal equals the reference
+        if isequal(data.h1results.ndiag(1,:), varargin{3}.pdiag(1,:)) && ...
+                isequal(data.h1results.ndiag(2,:), varargin{3}.pdiag(2,:))
+            pf = fail;
+        end
+        
     % Otherwise, no reference data exists
     else
 
@@ -742,12 +787,9 @@ if version >= 010100
         pf = pass;
     end
 
-% If version < 1.1.0    
+% If version < 1.1.0, profiles do not exist
 else
-
-    % Diagonal profiles do not exist
     pf = unk;
-
 end
 
 % Add result with footnote
@@ -757,17 +799,25 @@ results{size(results,1),3} = pf;
 footnotes{length(footnotes)+1} = ['<sup>3</sup>Prior to Version 1.1 ', ...
     'diagonal profiles were not available'];
 
-%% TEST 13: Negative Diagonal Profile Identical (>1.1.0)
+%% TEST 13: Negative Diagonal Profile Identical
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test compares the SNC IC Profiler negative 
+%   diagonal data to an expected value to validate that the data is 
+%   extracted from the PRM data and that corrections (array calibration, 
+%   ignored detectors, etc) are processed correctly.  This test is only
+%   applicable in Version 1.1.0 and later (in prior versions diagonals were
+%   not extracted).
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: F005, F007, F008
 %
-% INPUT DATA: No input data required
+% INPUT DATA: Expected IC Profiler negative diagonal data 
+%   (varargin{3}.ndiag)
 %
-% CONDITION A (+): 
+% CONDITION A (+): Extracted negative diagonal data exactly matches 
+%   expected data
 %
-% CONDITION B (-): 
+% CONDITION B (-): Extracted positive diagonal data does not match
+%   expected data
 
 % Retrieve guidata
 data = guidata(h);
@@ -781,15 +831,19 @@ if version >= 010100
         % If current value equals the reference
         if isequal(data.h1results.ndiag(1,:), varargin{3}.ndiag(1,:)) && ...
                 isequal(data.h1results.ndiag(2,:), varargin{3}.ndiag(2,:))
-
-            % Record pass
             pf = pass;
+        
+        % Otherwise the test fails
         else
-
-            % Record fail
             pf = fail;
         end
 
+        % If the positive diagonal equals the reference
+        if isequal(data.h1results.pdiag(1,:), varargin{3}.ndiag(1,:)) && ...
+                isequal(data.h1results.pdiag(2,:), varargin{3}.ndiag(2,:))
+            pf = fail;
+        end
+        
     % Otherwise, no reference data exists
     else
 
@@ -800,30 +854,31 @@ if version >= 010100
         pf = pass;
     end
 
-% If version < 1.1.0    
+% If version < 1.1.0, profiles do not exist
 else
-
-    % Diagonal profiles do not exist
     pf = unk;
-
 end
 
-% Add result
+% Add result with footnote
 results{size(results,1)+1,1} = '13';
 results{size(results,1),2} = 'Negative Diagonal Profile within 0.1%<sup>3</sup>';
 results{size(results,1),3} = pf;
 
 %% TEST 14: Timing Profile Identical
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test compares the SNC IC Profiler central detector
+%   time-dependent response to an expected value. to validate that the data 
+%   is extracted from the PRM data and that corrections (array calibration, 
+%   ignored detectors, etc) are processed correctly.
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: F006
 %
-% INPUT DATA: No input data required
+% INPUT DATA: Expected IC Profiler timing data (varargin{3}.tdata)
 %
-% CONDITION A (+): 
+% CONDITION A (+): Extracted timing data exactly matches expected data
+%   (Version 1.1.0 or later) or is within 0.1%
 %
-% CONDITION B (-): 
+% CONDITION B (-): Modified extracted timing data is not within 0.1%
 
 % Retrieve guidata
 data = guidata(h);
@@ -837,12 +892,17 @@ if version >= 010100
         % If current value equals the reference
         if isequal(data.h1results.tdata(1,:), varargin{3}.tdata(1,:)) && ...
                 isequal(data.h1results.tdata(2,:), varargin{3}.tdata(2,:))
-
-            % Record pass
             pf = pass;
+        
+        % Otherwise, the test fails
         else
-
-            % Record fail
+            pf = fail;
+        end
+        
+        % If modified value equals the reference, the test fails
+        if isequal(data.h1results.tdata(1,:), varargin{3}.tdata(1,:)) && ...
+                isequal(data.h1results.tdata(2,:), varargin{3}.tdata(2,:) ...
+                * 1.01)
             pf = fail;
         end
 
@@ -866,15 +926,21 @@ else
         if max(abs(data.h1T(2,2:end)/max(data.h1T(2,:)) - ...
                 varargin{3}.tdata(2,2:end)/max(varargin{3}.tdata(2,:)))) ...
                 < 0.001
-
-            % Record pass
             pf = pass;
+        
+        % Otherwise, test fails
         else
-
-            % Record fail
             pf = fail;
         end
 
+        % If modified value equals the reference, the test fails
+        if max(abs(data.h1T(2,2:end)/max(data.h1T(2,:)) - ...
+                (varargin{3}.tdata(2,2:end)/max(varargin{3}.tdata(2,:))) ...
+                * 1.01)) ...
+                < 0.001
+            pf = fail;
+        end
+        
     % Otherwise, no reference data exists
     else
         pf = unk;
@@ -884,20 +950,27 @@ end
 
 % Add result
 results{size(results,1)+1,1} = '14';
-results{size(results,1),2} = 'Timing Profile within 0.1%<sup>3</sup>';
+results{size(results,1),2} = 'Timing Profile within 0.1%';
 results{size(results,1),3} = pf;
 
 %% TEST 15: MLC X Gamma Identical
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test compares the Gamma profile computed for the
+%   SNC IC Profiler Y-axis to an expected value, using a consistent set of
+%   Gamma criteria (3%/1mm) defined in unit test 8/9.  As such, this test
+%   verifies that the combination of reference extraction, measured
+%   extraction, and Gamma computation all function correctly. Note, prior
+%   to version 1.1.0 the Gamma profile is stored in h1X(3,:), where X
+%   refers to the MLC axis.
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: F022
 %
-% INPUT DATA: No input data required
+% INPUT DATA: Expected Y-axis Gamma profile (varargin{3}.ygamma)
 %
-% CONDITION A (+): 
+% CONDITION A (+): Computed Y-axis Gamma profile exactly matches expected
+%   profile (Version 1.1.0 or later) or is within 0.1
 %
-% CONDITION B (-): 
+% CONDITION B (-): Modified Y-axis Gamma profile is not within 0.1
 
 % Retrieve guidata
 data = guidata(h);
@@ -911,12 +984,17 @@ if version >= 010100
         % If current value equals the reference
         if isequal(data.h1results.ygamma(1,:), varargin{3}.ygamma(1,:)) && ...
                 isequal(data.h1results.ygamma(2,:), varargin{3}.ygamma(2,:))
-
-            % Record pass
             pf = pass;
+        
+        % Otherwise the test fails
         else
-
-            % Record fail
+            pf = fail;
+        end
+        
+        % If the modified value equals the reference, the test fails
+        if isequal(data.h1results.ygamma(1,:), varargin{3}.ygamma(1,:)) && ...
+                isequal(data.h1results.ygamma(2,:), varargin{3}.ygamma(2,:) ...
+                * 1.1)
             pf = fail;
         end
 
@@ -940,12 +1018,16 @@ else
         % If current value equals the reference to within 0.1
         if max(abs(data.h1X(3,:) - varargin{3}.ygamma(2,:)) .* ...
                 (abs(varargin{3}.ydata(1,:)) < 15)) < 0.1
-
-            % Record pass
             pf = pass;
+        
+        % Otherwise the test fails
         else
-
-            % Record fail
+            pf = fail;
+        end
+        
+        % If the modified value equals the reference, the test fails
+        if max(abs(data.h1X(3,:) - varargin{3}.ygamma(2,:) * 1.1) .* ...
+                (abs(varargin{3}.ydata(1,:)) < 15)) < 0.1
             pf = fail;
         end
 
@@ -962,15 +1044,22 @@ results{size(results,1),3} = pf;
 
 %% TEST 16: MLC Y Gamma Identical
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test compares the Gamma profile computed for the
+%   SNC IC Profiler X-axis to an expected value, using a consistent set of
+%   Gamma criteria (3%/1mm) defined in unit test 8/9.  As such, this test
+%   verifies that the combination of reference extraction, measured
+%   extraction, and Gamma computation all function correctly. Note, prior
+%   to version 1.1.0 the Gamma profile is stored in h1Y(3,:), where Y
+%   refers to the MLC axis.
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: F022
 %
-% INPUT DATA: No input data required
+% INPUT DATA: Expected X-axis Gamma profile (varargin{3}.xgamma)
 %
-% CONDITION A (+): 
+% CONDITION A (+): Computed X-axis Gamma profile exactly matches expected
+%   profile (Version 1.1.0 or later) or is within 0.1
 %
-% CONDITION B (-): 
+% CONDITION B (-): Modified X-axis Gamma profile is not within 0.1
 
 % Retrieve guidata
 data = guidata(h);
@@ -984,12 +1073,17 @@ if version >= 010100
         % If current value equals the reference
         if isequal(data.h1results.xgamma(1,:), varargin{3}.xgamma(1,:)) && ...
                 isequal(data.h1results.xgamma(2,:), varargin{3}.xgamma(2,:))
-
-            % Record pass
             pf = pass;
+        
+        % Otherwise, the test fails
         else
-
-            % Record fail
+            pf = fail;
+        end
+        
+        % If modified value equals the reference, the test fails
+        if isequal(data.h1results.xgamma(1,:), varargin{3}.xgamma(1,:)) && ...
+                isequal(data.h1results.xgamma(2,:), varargin{3}.xgamma(2,:) ...
+                * 1.1)
             pf = fail;
         end
 
@@ -1017,12 +1111,16 @@ else
         % If current value equals the reference to within 0.1
         if max(abs(h1Y - varargin{3}.xgamma(2,:)) .* ...
                 (abs(varargin{3}.xgamma(1,:)) < 15)) < 0.1
-
-            % Record pass
             pf = pass;
+        
+        % Otherwise, the test fails
         else
-
-            % Record fail
+            pf = fail;
+        end
+        
+        % If modified value equals the reference, the test fails
+        if max(abs(h1Y - varargin{3}.xgamma(2,:) * 1.1) .* ...
+                (abs(varargin{3}.xgamma(1,:)) < 15)) < 0.1
             pf = fail;
         end
 
@@ -1037,17 +1135,25 @@ results{size(results,1)+1,1} = '16';
 results{size(results,1),2} = 'MLC Y Gamma within 0.1<sup>2</sup>';
 results{size(results,1),3} = pf;
 
-%% TEST 17: Positive Diagonal Gamma Identical (> 1.1.0)
+%% TEST 17: Positive Diagonal Gamma Identical
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test compares the Gamma profile computed for the
+%   SNC IC Profiler positive diagonal to an expected value, using a 
+%   consistent set of Gamma criteria (3%/1mm) defined in unit test 8/9.  
+%   As such, this test verifies that the combination of reference 
+%   extraction, measured extraction, and Gamma computation all function 
+%   correctly. 
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: F022
 %
-% INPUT DATA: No input data required
+% INPUT DATA: Expected positive diagonal axis Gamma profile 
+%   (varargin{3}.pgamma)
 %
-% CONDITION A (+): 
+% CONDITION A (+): Computed positive diagonal axis Gamma profile exactly 
+%   matches expected profile
 %
-% CONDITION B (-): 
+% CONDITION B (-): Modified positive diagonal axis Gamma profile does not
+%   match expected profile
 
 % Retrieve guidata
 data = guidata(h);
@@ -1061,12 +1167,17 @@ if version >= 010100
         % If current value equals the reference
         if isequal(data.h1results.pgamma(1,:), varargin{3}.pgamma(1,:)) && ...
                 isequal(data.h1results.pgamma(2,:), varargin{3}.pgamma(2,:))
-
-            % Record pass
             pf = pass;
+        
+        % Otherwise, the test fails
         else
-
-            % Record fail
+            pf = fail;
+        end
+        
+        % If modified value equals the reference, the test fails
+        if isequal(data.h1results.pgamma(1,:), varargin{3}.pgamma(1,:)) && ...
+                isequal(data.h1results.pgamma(2,:), varargin{3}.pgamma(2,:) ...
+                * 1.1)
             pf = fail;
         end
 
@@ -1093,17 +1204,25 @@ results{size(results,1)+1,1} = '17';
 results{size(results,1),2} = 'Positive Diagonal Gamma within 0.1<sup>3</sup>';
 results{size(results,1),3} = pf;
 
-%% TEST 18: Negative Diagonal Gamma Identical (> 1.1.0)
+%% TEST 18: Negative Diagonal Gamma Identical
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test compares the Gamma profile computed for the
+%   SNC IC Profiler negative diagonal to an expected value, using a 
+%   consistent set of Gamma criteria (3%/1mm) defined in unit test 8/9.  
+%   As such, this test verifies that the combination of reference 
+%   extraction, measured extraction, and Gamma computation all function 
+%   correctly. 
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: F022
 %
-% INPUT DATA: No input data required
+% INPUT DATA: Expected negative diagonal axis Gamma profile 
+%   (varargin{3}.ngamma)
 %
-% CONDITION A (+): 
+% CONDITION A (+): Computed negative diagonal axis Gamma profile exactly 
+%   matches expected profile
 %
-% CONDITION B (-): 
+% CONDITION B (-): Modified negative diagonal axis Gamma profile does not
+%   match expected profile
 
 % Retrieve guidata
 data = guidata(h);
@@ -1117,12 +1236,17 @@ if version >= 010100
         % If current value equals the reference
         if isequal(data.h1results.ngamma(1,:), varargin{3}.ngamma(1,:)) && ...
                 isequal(data.h1results.ngamma(2,:), varargin{3}.ngamma(2,:))
-
-            % Record pass
             pf = pass;
+        
+        % Otherwise, the test fails
         else
-
-            % Record fail
+            pf = fail;
+        end
+        
+        % If modified value equals the reference, the test fails
+        if isequal(data.h1results.ngamma(1,:), varargin{3}.ngamma(1,:)) && ...
+                isequal(data.h1results.ngamma(2,:), varargin{3}.ngamma(2,:) ...
+                * 1.1)
             pf = fail;
         end
 
@@ -1151,15 +1275,67 @@ results{size(results,1),3} = pf;
 
 %% TEST 19: Statistics Identical
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test compares the statistics displayed on the user
+%   interface to a set of expected values.  The statistics compared are the
+%   time difference and X/Y axis flatness, symmetry, FWHM difference, and 
+%   max gamma.  In this manner both the presence of and accuracy of the 
+%   statistics are verified.
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: U007, U008, U010, U012, F009, F010, F012, F013,
+%   F016, F019, F020, F026
 %
-% INPUT DATA: No input data required
+% INPUT DATA: Expected beam on time difference (varargin{3}.statbot), MLC X
+%   axis FWHM difference (varargin{3}.statxfwhm), MLC X axis measured
+%   flatness (varargin{3}.xflat), MLC X axis measured symmetry 
+%   (varargin{3}.xsym), MLC X axis max gamma (varargin{3}.xmax), MLC Y axis
+%   FWHM difference (varargin{3}.statyfwhm), MLC Y axis measured flatness 
+%   (varargin{3}.yflat), MLC Y axis measured symmetry (varargin{3}.ysym), 
+%   MLC Y axis max gamma (varargin{3}.ymax)
 %
-% CONDITION A (+): 
+% CONDITION A (+): The expected beam on time difference equals the expected
+%   value exactly (Version 1.1.0 and later) or within 0.1 sec
 %
-% CONDITION B (-): 
+% CONDITION B (-): The expected beam on time difference does not equal 0
+%
+% CONDITION C (+): The MLC X axis FWHM difference equals the expected value
+%   exactly (Version 1.1.0 and later) or within 0.1 mm
+%
+% CONDITION D (-): The MLC X axis FWHM difference does not equal 0
+%
+% CONDITION E (+): The MLC X axis flatness equals the expected value
+%   exactly (Version 1.1.0 and later) or within 0.1%
+%
+% CONDITION F (-): The MLC X axis flatness does not equal 0
+%
+% CONDITION G (+): The MLC X axis symmetry equals the expected value
+%   exactly (Version 1.1.0 and later) or within 0.1%
+%
+% CONDITION H (-): The MLC X axis symmetry does not equal 0
+%
+% CONDITION I (+): The MLC X max gamma equals the expected value
+%   exactly (Version 1.1.0 and later) or within 0.1
+%
+% CONDITION J (-): The MLC X max gamma does not equal 0
+%
+% CONDITION K (+): The MLC Y axis FWHM difference equals the expected value
+%   exactly (Version 1.1.0 and later) or within 0.1 mm
+%
+% CONDITION L (-): The MLC Y axis FWHM difference does not equal 0
+%
+% CONDITION M (+): The MLC Y axis flatness equals the expected value
+%   exactly (Version 1.1.0 and later) or within 0.1%
+%
+% CONDITION N (-): The MLC Y axis flatness does not equal 0
+%
+% CONDITION O (+): The MLC Y axis symmetry equals the expected value
+%   exactly (Version 1.1.0 and later) or within 0.1%
+%
+% CONDITION P (-): The MLC Y axis symmetry does not equal 0
+%
+% CONDITION Q (+): The MLC Y max gamma equals the expected value
+%   exactly (Version 1.1.0 and later) or within 0.1
+%
+% CONDITION R (-): The MLC Y max gamma does not equal 0
 
 % Retrieve guidata
 data = guidata(h);
@@ -1184,16 +1360,33 @@ if version >= 010100
                 isequal(textscan(data.h1table.Data{7,2}, '%f'), ...
                 varargin{3}.statyflat) && ...
                 isequal(textscan(data.h1table.Data{8,2}, '%f'), ...
-                varargin{3}.statysym)
-
-            % Record pass
+                varargin{3}.statysym) && ...
+                isequal(textscan(data.h1table.Data{9,2}, '%f'), ...
+                varargin{3}.statxmax) && ...
+                isequal(textscan(data.h1table.Data{10,2}, '%f'), ...
+                varargin{3}.statymax)
             pf = pass;
+        
+        % Otherwise, the test fails
         else
-
-            % Record fail
             pf = fail;
         end
 
+        % If current value equals 0, the test fails
+        z{1} = 0;
+        if isequal(textscan(data.h1table.Data{2,2}, '%f'), z) || ...
+                isequal(textscan(data.h1table.Data{3,2}, '%f'), z) || ...
+                isequal(textscan(data.h1table.Data{4,2}, '%f'), z) || ...
+                isequal(textscan(data.h1table.Data{5,2}, '%f'), z) || ...
+                isequal(textscan(data.h1table.Data{6,2}, '%f'), z) || ...
+                isequal(textscan(data.h1table.Data{7,2}, '%f'), z) || ...
+                isequal(textscan(data.h1table.Data{8,2}, '%f'), z) || ...
+                isequal(textscan(data.h1table.Data{9,2}, '%f'), z) || ...
+                isequal(textscan(data.h1table.Data{10,2}, '%f'), z)
+            pf = fail;
+        end
+        clear z;
+        
     % Otherwise, no reference data exists
     else
 
@@ -1205,6 +1398,8 @@ if version >= 010100
         reference.statyfwhm = textscan(data.h1table.Data{6,2}, '%f');
         reference.statyflat = textscan(data.h1table.Data{7,2}, '%f');
         reference.statysym = textscan(data.h1table.Data{8,2}, '%f');
+        reference.statxmax = textscan(data.h1table.Data{9,2}, '%f');
+        reference.statymax = textscan(data.h1table.Data{10,2}, '%f');
 
         % Assume pass
         pf = pass;
@@ -1230,16 +1425,33 @@ else
                 abs(cell2mat(textscan(data.h1table.Data{15,2}, '%f')) - ...
                 varargin{3}.statyflat{1}) < 0.1 && ...
                 abs(cell2mat(textscan(data.h1table.Data{16,2}, '%f')) - ...
-                varargin{3}.statysym{1}) < 0.1
-
-            % Record pass
+                varargin{3}.statysym{1}) < 0.1 && ...
+                abs(cell2mat(textscan(data.h1table.Data{11,2}, '%f')) - ...
+                varargin{3}.statxmax{1}) < 0.1 && ...
+                abs(cell2mat(textscan(data.h1table.Data{17,2}, '%f')) - ...
+                varargin{3}.statymax{1}) < 0.1
             pf = pass;
+        
+        % Otherwise, the test fails
         else
-
-            % Record fail
             pf = fail;
         end
 
+        % If current value equals 0, the test fails
+        z{1} = 0;
+        if isequal(textscan(data.h1table.Data{4,2}, '%f'), z) || ...
+                isequal(textscan(data.h1table.Data{8,2}, '%f'), z) || ...
+                isequal(textscan(data.h1table.Data{9,2}, '%f'), z) || ...
+                isequal(textscan(data.h1table.Data{10,2}, '%f'), z) || ...
+                isequal(textscan(data.h1table.Data{14,2}, '%f'), z) || ...
+                isequal(textscan(data.h1table.Data{15,2}, '%f'), z) || ...
+                isequal(textscan(data.h1table.Data{16,2}, '%f'), z) || ...
+                isequal(textscan(data.h1table.Data{11,2}, '%f'), z) || ...
+                isequal(textscan(data.h1table.Data{17,2}, '%f'), z)
+            pf = fail;
+        end
+        clear z;
+        
     % Otherwise, no reference data exists
     else
         pf = unk;
@@ -1257,15 +1469,49 @@ footnotes{length(footnotes)+1} = ['<sup>4</sup>[#11](../issues/11) In ', ...
 
 %% TEST 20: H1 Figures Functional
 %
-% DESCRIPTION: 
+% DESCRIPTION: This unit test tests the different options available in the
+%   Head 1 plot display dropdown menu by executing the dropdown callback
+%   for all options.  In the positive condition of each case the plot is
+%   attempted with result data present, while in the negative condition the
+%   plot is attempted with no data present.  Note, this test does also
+%   require the user to visually verify that the plot displays correctly
+%   (and with the correct colors, in the case of SRS-F024).
 %
-% RELEVANT REQUIREMENTS:
+% RELEVANT REQUIREMENTS: U009, U011, F014, F015, F023, F024, F025 
 %
 % INPUT DATA: No input data required
 %
-% CONDITION A (+): 
+% CONDITION A (+): The time-dependent central channel response is displayed
+%   when h1results data is present.
 %
-% CONDITION B (-): 
+% CONDITION B (-): The time-dependent response is not displayed when
+%   h1results data is not present, but exits gracefully.
+%
+% CONDITION C (+): The MLC X Gamma index, measured, and reference profiles
+%   are displayed when h1results data is present.
+%
+% CONDITION D (-): The MLC X Gamma index, measured, and reference profiles
+%   are not displayed when h1results data is not present.
+%
+% CONDITION E (+): The MLC Y Gamma index, measured, and reference profiles
+%   are displayed when h1results data is present.
+%
+% CONDITION F (-): The MLC Y Gamma index, measured, and reference profiles
+%   are not displayed when h1results data is not present.
+%
+% CONDITION G (+): The positive diagonal Gamma index, measured, and 
+%   reference profiles are displayed when h1results data is present.
+%
+% CONDITION H (-): The positive diagonal Gamma index, measured, and 
+%   reference profiles are not displayed when h1results data is not 
+%   present.
+%
+% CONDITION I (+): The negative diagonal Gamma index, measured, and 
+%   reference profiles are displayed when h1results data is present.
+%
+% CONDITION J (-): The negative diagonal Gamma index, measured, and 
+%   reference profiles are not displayed when h1results data is not 
+%   present.
 
 % Retrieve guidata
 data = guidata(h);
@@ -1275,6 +1521,7 @@ callback = get(data.h1display, 'Callback');
 
 % Execute callbacks in try/catch statement
 try
+    
     % Start with pass
     pf = pass;
     
@@ -1287,10 +1534,13 @@ try
         
         % Execute callback
         callback(data.h1display, data);
+        
+        % Execute callback without results data
+        callback(data.h1display, rmfield(data, 'h1results'));
     end
-catch
     
-    % If callback fails, record failure
+% If callback fails, record failure    
+catch
     pf = fail; 
 end
 
