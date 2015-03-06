@@ -92,7 +92,12 @@ set(handles.text12, 'String', datestr(now));
 if s == 0
     set(handles.text7, 'String', cmdout);
 else
-    cmdout = inputdlg('Enter your name:', 'Username', [1 50]);
+    % If run as an automated unit test, do not prompt
+    if data.unitflag == 0
+        cmdout = inputdlg('Enter your name:', 'Username', [1 50]);
+    else
+        cmdout{1} = 'Unit test';
+    end
     set(handles.text7, 'String', cmdout{1});
 end
 clear s cmdout;
@@ -438,7 +443,7 @@ temp = [tempname, '.pdf'];
 Event(['Saving report to ', temp]);
 saveas(hObject, temp);
 
-% Open file (if not running in unit testing)
+% Open file (if not running as an automated unit test)
 if data.unitflag == 0
     Event(['Opening file ', temp]);
     open(temp);
