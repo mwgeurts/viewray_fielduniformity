@@ -111,17 +111,6 @@ end
 % Retrieve guidata
 data = guidata(h);
 
-% Verify that the print button is disabled
-if ~strcmp(get(data.print_button, 'enable'), 'off')
-    pf = fail;
-end
-
-% Verify that Gamma criteria exist
-if ~isfield(data, 'abs') || ~isfield(data, 'dta') || data.abs == 0 || ...
-        data.dta == 0
-    pf = fail;
-end
-
 % Set unit test flag to 1 (to avoid uigetfile/questdlg/user input)
 data.unitflag = 1; 
 
@@ -137,6 +126,21 @@ results{size(results,1),3} = sprintf('Version&nbsp;%s', data.version);
 
 % Update guidata
 guidata(h, data);
+
+% If version >= 1.1.0
+if version >= 010100
+    
+    % Verify that the print button is disabled
+    if ~strcmp(get(data.print_button, 'enable'), 'off')
+        pf = fail;
+    end
+end
+
+% Verify that Gamma criteria exist
+if ~isfield(data, 'abs') || ~isfield(data, 'dta') || data.abs == 0 || ...
+        data.dta == 0
+    pf = fail;
+end
 
 % Add application load result
 results{size(results,1)+1,1} = '1';
@@ -2065,10 +2069,23 @@ pf = pass;
 
 % Verify file location, plot dropdown menu, plot, statistics, and internal 
 % variables exist
-if isempty(data.h1file.String) || isempty(data.h1results) || ...
-        isempty(data.h1refresults) || data.h1display.Value == 1 || ...
-        isequal(data.h1table, cell(10, 4))
+if isempty(data.h1file.String) || data.h1display.Value == 1
     pf = fail;
+end
+
+% If version >= 1.1.0
+if version >= 010100 
+    if isempty(data.h1results) || isempty(data.h1refresults) || ...
+            isequal(data.h1table, cell(10, 2))
+        pf = fail;
+    end
+    
+% Otherwise, if version < 1.1.0    
+else
+    if isempty(data.h1data) || isempty(data.h1X)  || isempty(data.h1Y) || ...
+             isempty(data.h1T) || isequal(data.h1table, cell(4, 2))
+        pf = fail;
+    end
 end
 
 % Execute callback in try/catch statement
@@ -2087,10 +2104,23 @@ data = guidata(h);
 
 % Verify file location, plot dropdown menu, plot, statistics, and internal 
 % variables are now cleared
-if ~isempty(data.h1file.String) || ~isempty(data.h1results) || ...
-        ~isempty(data.h1refresults) || ~data.h1display.Value == 1 || ...
-        ~isequal(data.h1table, cell(10, 4))
+if ~isempty(data.h1file.String) || ~data.h1display.Value == 1
     pf = fail;
+end
+
+% If version >= 1.1.0
+if version >= 010100 
+    if ~isempty(data.h1results) || ~isempty(data.h1refresults) || ...
+            ~isequal(data.h1table, cell(10, 2))
+        pf = fail;
+    end
+    
+% Otherwise, if version < 1.1.0    
+else
+    if ~isempty(data.h1data) || ~isempty(data.h1X)  || ~isempty(data.h1Y) ...
+             || ~isempty(data.h1T) || ~isequal(data.h1table, cell(4, 2))
+        pf = fail;
+    end
 end
 
 % Add result
