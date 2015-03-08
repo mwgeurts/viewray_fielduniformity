@@ -124,6 +124,12 @@ results{size(results,1)+1,1} = 'ID';
 results{size(results,1),2} = 'Test Case';
 results{size(results,1),3} = sprintf('Version&nbsp;%s', data.version);
 
+% If version < 1.1.1, revert to pass (ParseSNCprm unit test was not
+% available)
+if version < 010101
+    pf = pass;
+end
+
 % Update guidata
 guidata(h, data);
 
@@ -272,7 +278,7 @@ if version >= 010100
     % Execute LoadProfilerReference with one incorrect input in try/catch 
     % statement
     try
-        LoadProfilerDICOMReference('asd');
+        LoadProfilerDICOMReference({'asd'});
         pf = fail;
     catch
         % If it fails, test passed
@@ -337,25 +343,39 @@ if version >= 010100
     if nargin == 3
 
         % If current value equals the reference
-        if isequal(data.refdata, varargin{3}.refdata)
+        if isequal(data.refdata.xdata, varargin{3}.refdata.xdata)
             xpf = pass;
-            ypf = pass;
-        
+
         % Otherwise, it failed
         else
             xpf = fail;
+        end
+        
+        % Modify refdata
+        data.refdata.xdata(1,1) = 0;
+        
+        % Verify current value now fails
+        if isequal(data.refdata.xdata, varargin{3}.refdata.xdata)
+            xpf = fail;
+        end
+        
+        % If current value equals the reference
+        if isequal(data.refdata.ydata, varargin{3}.refdata.ydata)
+            ypf = pass;
+
+        % Otherwise, it failed
+        else
             ypf = fail;
         end
         
         % Modify refdata
-        data.refdata(1,1) = 0;
+        data.refdata.ydata(1,1) = 0;
         
         % Verify current value now fails
-        if isequal(data.refdata, varargin{3}.refdata)
-            xpf = fail;
+        if isequal(data.refdata.ydata, varargin{3}.refdata.ydata)
             ypf = fail;
         end
-
+        
     % Otherwise, no reference data exists
     else
 
@@ -569,9 +589,8 @@ time = sprintf('%0.1f sec', toc(t));
 % Retrieve guidata
 data = guidata(h);
 
-% Verify that h1results exists and the file name matches the input data
-if strcmp(pf, pass) && ~isempty(data.h1results) && ...
-        strcmp(data.h1file.String, fullfile(varargin{2}))
+% Verify that the file name matches the input data
+if strcmp(pf, pass) && strcmp(data.h1file.String, fullfile(varargin{2}))
     pf = pass;
 else
     pf = fail;
@@ -783,8 +802,10 @@ else
     if nargin == 3
 
         % If current value equals the reference to within 0.1%
-        if isequal(data.h1Y(1,:)/10, varargin{3}.xdata(1,:)) && ...
-                max(abs(data.h1Y(2,:) - varargin{3}.xdata(2,:))) < 0.001
+        if isequal(fliplr([data.h1Y(1,1:31) data.h1Y(1,33) ...
+                data.h1Y(1,35:end)]/10), varargin{3}.xdata(1,:)) && ...
+                max(abs([data.h1Y(2,1:31) data.h1Y(2,33) ...
+                data.h1Y(2,35:end)]) - varargin{3}.xdata(2,:)) < 0.001
             pf = pass;
         
         % Otherwise, the test fails
@@ -1072,7 +1093,7 @@ if version >= 010100
         % If the modified value equals the reference, the test fails
         if isequal(data.h1results.ygamma(1,:), varargin{3}.ygamma(1,:)) && ...
                 isequal(data.h1results.ygamma(2,:), varargin{3}.ygamma(2,:) ...
-                * 1.1)
+                * 2)
             pf = fail;
         end
 
@@ -1104,7 +1125,7 @@ else
         end
         
         % If the modified value equals the reference, the test fails
-        if max(abs(data.h1X(3,:) - varargin{3}.ygamma(2,:) * 1.1) .* ...
+        if max(abs(data.h1X(3,:) - varargin{3}.ygamma(2,:) * 2) .* ...
                 (abs(varargin{3}.ydata(1,:)) < 15)) < 0.1
             pf = fail;
         end
@@ -1161,7 +1182,7 @@ if version >= 010100
         % If modified value equals the reference, the test fails
         if isequal(data.h1results.xgamma(1,:), varargin{3}.xgamma(1,:)) && ...
                 isequal(data.h1results.xgamma(2,:), varargin{3}.xgamma(2,:) ...
-                * 1.1)
+                * 2)
             pf = fail;
         end
 
@@ -1197,7 +1218,7 @@ else
         end
         
         % If modified value equals the reference, the test fails
-        if max(abs(h1Y - varargin{3}.xgamma(2,:) * 1.1) .* ...
+        if max(abs(h1Y - varargin{3}.xgamma(2,:) * 2) .* ...
                 (abs(varargin{3}.xgamma(1,:)) < 15)) < 0.1
             pf = fail;
         end
@@ -1255,7 +1276,7 @@ if version >= 010100
         % If modified value equals the reference, the test fails
         if isequal(data.h1results.pgamma(1,:), varargin{3}.pgamma(1,:)) && ...
                 isequal(data.h1results.pgamma(2,:), varargin{3}.pgamma(2,:) ...
-                * 1.1)
+                * 2)
             pf = fail;
         end
 
@@ -1324,7 +1345,7 @@ if version >= 010100
         % If modified value equals the reference, the test fails
         if isequal(data.h1results.ngamma(1,:), varargin{3}.ngamma(1,:)) && ...
                 isequal(data.h1results.ngamma(2,:), varargin{3}.ngamma(2,:) ...
-                * 1.1)
+                * 2)
             pf = fail;
         end
 
@@ -1613,8 +1634,19 @@ try
         % Execute callback
         callback(data.h1display, data);
         
-        % Execute callback without results data
-        callback(data.h1display, rmfield(data, 'h1results'));
+        % If version >= 1.1.0
+        if version >= 010100
+            
+            % Execute callback without results data
+            callback(data.h1display, rmfield(data, 'h1results'));
+            
+        % Otherwise, if version < 1.1.0
+        else
+           
+            % Execute callback without results data
+            callback(data.h1display, rmfield(data, ...
+                {'refData', 'h1X', 'h1Y', 'h1T'})); 
+        end
     end
     
 % If callback fails, record failure    
@@ -1727,9 +1759,8 @@ end
 % Retrieve guidata
 data = guidata(h);
 
-% Verify that h1results exists and the file name matches the input data
-if strcmp(pf, pass) && ~isempty(data.h2results) && ...
-        strcmp(data.h2file.String, fullfile(varargin{2}))
+% Verify that the file name matches the input data
+if strcmp(pf, pass) && strcmp(data.h2file.String, fullfile(varargin{2}))
     pf = pass;
 else
     pf = fail;
@@ -1798,9 +1829,8 @@ end
 % Retrieve guidata
 data = guidata(h);
 
-% Verify that h1results exists and the file name matches the input data
-if strcmp(pf, pass) && ~isempty(data.h3results) && ...
-        strcmp(data.h3file.String, fullfile(varargin{2}))
+% Verify that the file name matches the input data
+if strcmp(pf, pass) && strcmp(data.h3file.String, fullfile(varargin{2}))
     pf = pass;
 else
     pf = fail;
@@ -1905,8 +1935,19 @@ try
         % Execute callback
         callback(data.h2display, data);
         
-        % Execute callback without results data
-        callback(data.h2display, rmfield(data, 'h2results'));
+        % If version >= 1.1.0
+        if version >= 010100
+            
+            % Execute callback without results data
+            callback(data.h2display, rmfield(data, 'h2results'));
+            
+        % Otherwise, if version < 1.1.0
+        else
+           
+            % Execute callback without results data
+            callback(data.h2display, rmfield(data, ...
+                {'refData', 'h2X', 'h2Y', 'h2T'})); 
+        end
     end
 catch
     
@@ -1937,8 +1978,19 @@ try
         % Execute callback
         callback(data.h3display, data);
         
-        % Execute callback without results data
-        callback(data.h3display, rmfield(data, 'h3results'));
+        % If version >= 1.1.0
+        if version >= 010100
+            
+            % Execute callback without results data
+            callback(data.h3display, rmfield(data, 'h3results'));
+            
+        % Otherwise, if version < 1.1.0
+        else
+           
+            % Execute callback without results data
+            callback(data.h3display, rmfield(data, ...
+                {'refData', 'h3X', 'h3Y', 'h3T'})); 
+        end
     end
 catch
     
@@ -1966,10 +2018,13 @@ results{size(results,1),3} = pf;
 %
 % CONDITION A (+): The print report button is enabled
 %
-% CONDITION B (+/-): A report is generated without error and with the user
+% CONDITION B (+): A report is generated without error and with the user
 %   name (or "Unit test" if whoami does not exist), current date and time,
 %   SNC version/collector model/serial, MLC X/Y Gamma profiles, and
 %   statistics.
+%
+% CONDITION C (-): A report is generated if Head 1, 2, or 3 results do not
+%   exist without error.
 
 % If version >= 1.1.0
 if version >= 010100
@@ -2004,7 +2059,17 @@ if version >= 010100
         pf = fail;
     end
     
-    
+    % Execute callback in try/catch statement
+    try
+        
+        % Execute callback again, this time removing the data
+        callback(data.print_button, rmfield(data, ...
+            {'h1results', 'h2results', 'h3results'}));
+    catch
+        
+        % If callback fails, record failure
+        pf = fail; 
+    end
 
 % If version < 1.1.0
 else
@@ -2073,17 +2138,24 @@ if isempty(data.h1file.String) || data.h1display.Value == 1
     pf = fail;
 end
 
-% If version >= 1.1.0
-if version >= 010100 
+% If version >= 1.1.1
+if version >= 010101
     if isempty(data.h1results) || isempty(data.h1refresults) || ...
-            isequal(data.h1table, cell(10, 2))
+            isequal(data.h1table.Data, cell(10, 2))
+        pf = fail;
+    end
+    
+% If version >= 1.1.0
+elseif version >= 010100 
+    if isempty(data.h1results) || isempty(data.h1refresults) || ...
+            isequal(data.h1table.Data, cell(10, 4))
         pf = fail;
     end
     
 % Otherwise, if version < 1.1.0    
 else
     if isempty(data.h1data) || isempty(data.h1X)  || isempty(data.h1Y) || ...
-             isempty(data.h1T) || isequal(data.h1table, cell(4, 2))
+             isempty(data.h1T) || isequal(data.h1table.Data, cell(4, 2))
         pf = fail;
     end
 end
@@ -2108,17 +2180,24 @@ if ~isempty(data.h1file.String) || ~data.h1display.Value == 1
     pf = fail;
 end
 
-% If version >= 1.1.0
-if version >= 010100 
+% If version >= 1.1.1
+if version >= 010101
     if ~isempty(data.h1results) || ~isempty(data.h1refresults) || ...
-            ~isequal(data.h1table, cell(10, 2))
+            ~isequal(data.h1table.Data, cell(10, 2))
+        pf = fail;
+    end
+    
+% If version >= 1.1.0
+elseif version >= 010100 
+    if ~isempty(data.h1results) || ~isempty(data.h1refresults) || ...
+            ~isequal(data.h1table.Data, cell(10, 4))
         pf = fail;
     end
     
 % Otherwise, if version < 1.1.0    
 else
     if ~isempty(data.h1data) || ~isempty(data.h1X)  || ~isempty(data.h1Y) ...
-             || ~isempty(data.h1T) || ~isequal(data.h1table, cell(4, 2))
+             || ~isempty(data.h1T) || ~isequal(data.h1table.Data, cell(4, 2))
         pf = fail;
     end
 end
@@ -2136,10 +2215,30 @@ pf = pass;
 
 % Verify file location, plot dropdown menu, plot, statistics, and internal 
 % variables exist
-if isempty(data.h2file.String) || isempty(data.h2results) || ...
-        isempty(data.h2refresults) || data.h2display.Value == 1 || ...
-        isequal(data.h2table, cell(10, 4))
+if isempty(data.h2file.String) || data.h2display.Value == 1
     pf = fail;
+end
+
+% If version >= 1.1.1
+if version >= 010101
+    if isempty(data.h2results) || isempty(data.h2refresults) || ...
+            isequal(data.h2table.Data, cell(10, 2))
+        pf = fail;
+    end
+
+% If version >= 1.1.0
+elseif version >= 010100 
+    if isempty(data.h2results) || isempty(data.h2refresults) || ...
+            isequal(data.h2table.Data, cell(10, 4))
+        pf = fail;
+    end
+    
+% Otherwise, if version < 1.1.0    
+else
+    if isempty(data.h2data) || isempty(data.h2X)  || isempty(data.h2Y) || ...
+             isempty(data.h2T) || isequal(data.h2table.Data, cell(4, 2))
+        pf = fail;
+    end
 end
 
 % Execute callback in try/catch statement
@@ -2158,10 +2257,30 @@ data = guidata(h);
 
 % Verify file location, plot dropdown menu, plot, statistics, and internal 
 % variables are now cleared
-if ~isempty(data.h2file.String) || ~isempty(data.h2results) || ...
-        ~isempty(data.h2refresults) || ~data.h2display.Value == 1 || ...
-        ~isequal(data.h2table, cell(10, 4))
+if ~isempty(data.h2file.String) || ~data.h2display.Value == 1
     pf = fail;
+end
+
+% If version >= 1.1.1
+if version >= 010101
+    if ~isempty(data.h2results) || ~isempty(data.h2refresults) || ...
+            ~isequal(data.h2table.Data, cell(10, 2))
+        pf = fail;
+    end
+    
+% If version >= 1.1.0
+elseif version >= 010100 
+    if ~isempty(data.h2results) || ~isempty(data.h2refresults) || ...
+            ~isequal(data.h2table.Data, cell(10, 4))
+        pf = fail;
+    end
+    
+% Otherwise, if version < 1.1.0    
+else
+    if ~isempty(data.h2data) || ~isempty(data.h2X)  || ~isempty(data.h2Y) ...
+             || ~isempty(data.h2T) || ~isequal(data.h2table.Data, cell(4, 2))
+        pf = fail;
+    end
 end
 
 % Add result
@@ -2177,10 +2296,30 @@ pf = pass;
 
 % Verify file location, plot dropdown menu, plot, statistics, and internal 
 % variables exist
-if isempty(data.h3file.String) || isempty(data.h3results) || ...
-        isempty(data.h3refresults) || data.h3display.Value == 1 || ...
-        isequal(data.h3table, cell(10, 4))
+if isempty(data.h3file.String) || data.h3display.Value == 1
     pf = fail;
+end
+
+% If version >= 1.1.1
+if version >= 010101
+    if isempty(data.h3results) || isempty(data.h3refresults) || ...
+            isequal(data.h3table.Data, cell(10, 2))
+        pf = fail;
+    end
+    
+% If version >= 1.1.0
+elseif version >= 010100
+    if isempty(data.h3results) || isempty(data.h3refresults) || ...
+            isequal(data.h3table.Data, cell(10, 4))
+        pf = fail;
+    end
+    
+% Otherwise, if version < 1.1.0    
+else
+    if isempty(data.h3data) || isempty(data.h3X)  || isempty(data.h3Y) || ...
+             isempty(data.h3T) || isequal(data.h3table.Data, cell(4, 2))
+        pf = fail;
+    end
 end
 
 % Execute callback in try/catch statement
@@ -2199,10 +2338,30 @@ data = guidata(h);
 
 % Verify file location, plot dropdown menu, plot, statistics, and internal 
 % variables are now cleared
-if ~isempty(data.h3file.String) || ~isempty(data.h3results) || ...
-        ~isempty(data.h3refresults) || ~data.h3display.Value == 1 || ...
-        ~isequal(data.h3table, cell(10, 4))
+if ~isempty(data.h3file.String) || ~data.h3display.Value == 1
     pf = fail;
+end
+
+% If version >= 1.1.1
+if version >= 010101
+    if ~isempty(data.h3results) || ~isempty(data.h3refresults) || ...
+            ~isequal(data.h3table.Data, cell(10, 2))
+        pf = fail;
+    end
+    
+% If version >= 1.1.0
+elseif version >= 010100
+    if ~isempty(data.h3results) || ~isempty(data.h3refresults) || ...
+            ~isequal(data.h3table.Data, cell(10, 4))
+        pf = fail;
+    end
+    
+% Otherwise, if version < 1.1.0    
+else
+    if ~isempty(data.h3data) || ~isempty(data.h3X)  || ~isempty(data.h3Y) ...
+             || ~isempty(data.h3T) || ~isequal(data.h3table.Data, cell(4, 2))
+        pf = fail;
+    end
 end
 
 % Add result

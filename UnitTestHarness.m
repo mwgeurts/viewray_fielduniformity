@@ -1,4 +1,4 @@
-function UnitTestHarness()
+function UnitTestHarness(varargin)
 % UnitTestHarness is a function that automatically runs a series of unit 
 % tests on the most current and previous versions of this application.  The 
 % unit test results are written to a GitHub Flavored Markdown text file 
@@ -6,7 +6,9 @@ function UnitTestHarness()
 % location of any test data necessary to run the unit tests and locations 
 % of the most recent and previous application vesion source code.
 % 
-% No input or return arguments are necessary to execute this function.
+% No input or return arguments are necessary to execute this function.  The
+% optional string 'noprofile' may be passed, which will cause the profiler
+% HTML save feature to be temporarily disabled.
 %
 % Author: Mark Geurts, mark.w.geurts@gmail.com
 % Copyright (C) 2015 University of Wisconsin Board of Regents
@@ -41,7 +43,7 @@ priorApps = {
 % test suite, column 2 is the absolute path to the file(s)
 testData = {
     '27.3cm'     './test_data/Head1_G90_27p3.prm'
-    '10.5cm'     './test_data/Head3_G90_10p5.prm'
+%    '10.5cm'     './test_data/Head3_G90_10p5.prm'
 };
 
 % Declare name of report file (will be appended by _R201XX.md based on 
@@ -163,7 +165,7 @@ profile on -history;
 S = profile('status');
 
 % Log status information
-Event(sprintf(['MATLAB profiler initialized\nStatus: %s\n', ...
+Event(sprintf(['Starting MATLAB profiler\nStatus: %s\n', ...
     'Detail level: %s\nTimer: %s\nHistory tracking: %s\nHistory size: %i'], ...
     S.ProfilerStatus, S.DetailLevel, S.Timer, S.HistoryTracking, ...
     S.HistorySize), 'UNIT');
@@ -269,21 +271,16 @@ f = matlab.codetools.requiredFilesAndProducts(...
 
 % Log number of functions found in current application
 Event(sprintf('%i required functions identified in %s', length(f), ...
-    fullfile(cwd, currentApp)), 'UNIT');
+    currentApp), 'UNIT');
 
 % Loop through files, saving file names
 for i = 1:length(f)
     
     % Retrieve file name
     [~, name, ~] = fileparts(f{i});
-    
-    % If file is within currentApp
-    if strncmp(fullfile(cwd, currentApp), f{j}, ...
-            length(fullfile(cwd, currentApp)))
-    
-        % Store file name
-        fList{length(fList)+1} = name;
-    end
+
+    % Store file name
+    fList{length(fList)+1} = name;
 end
 
 % Loop through priorApps
@@ -295,7 +292,7 @@ for i = 1:length(priorApps)
     
     % Log the number of functions found in prior applications
     Event(sprintf('%i required functions identified in %s', length(f), ...
-        fullfile(cwd, priorApps{i})), 'UNIT');
+        priorApps{i}), 'UNIT');
 
     % Loop through files, saving file names
     for j = 1:length(f)
@@ -303,13 +300,8 @@ for i = 1:length(priorApps)
         % Retrieve file name
         [~, name, ~] = fileparts(f{j});
        
-        % If file is within priorApps
-        if strncmp(fullfile(cwd, priorApps{i}), f{j}, ...
-                length(fullfile(cwd, priorApps{i})))
-        
-            % Store file name
-            fList{length(fList)+1} = name;
-        end
+        % Store file name
+        fList{length(fList)+1} = name;
     end
 end
 
@@ -340,9 +332,13 @@ for i = 1:size(stats.FunctionTable, 1)
         continue;
     end
     
+    % Generate absolute path of currentApp
+    cd(fullfile(cwd, currentApp));
+    path = [pwd, filesep];
+    cd(cwd);
+    
     % If FileName is within the currentApp
-    if strncmp(fullfile(cwd, currentApp), stats.FunctionTable(i).FileName, ...
-            length(fullfile(cwd, currentApp)))
+    if strncmp(path, stats.FunctionTable(i).FileName, length(path))
         
         % Set column index
         c = size(executed, 2);
@@ -351,10 +347,13 @@ for i = 1:size(stats.FunctionTable, 1)
         % Loop through priorApps
         for j = 1:length(priorApps)
             
+            % Generate absolute path of priorApp
+            cd(fullfile(cwd, priorApps{j}));
+            path = [pwd, filesep];
+            cd(cwd);
+            
             % If FileName is within priorApps
-            if strncmp(fullfile(cwd, priorApps{j}), ...
-                    stats.FunctionTable(i).FileName, ...
-                    length(fullfile(cwd, priorApps{j})))
+            if strncmp(path, stats.FunctionTable(i).FileName, length(path))
                 
                 % Set column index and end for loop
                 c = j;
@@ -384,9 +383,8 @@ for i = 1:size(stats.FunctionTable, 1)
                 % If the total number of lines has not been computed yet
                 if total(j, c) == 0
                     total(j, c) = sloc(stats.FunctionTable(i).FileName);
-                    Event(sprintf('Total line count for %s computed as %i', ...
-                        stats.FunctionTable(i).FileName, total(j, c)), ...
-                        'UNIT');
+                    Event(sprintf('%i lines counted in %s', total(j, c), ...
+                        stats.FunctionTable(i).FileName), 'UNIT');
                 end
                 
                 % Break from the loop
@@ -411,8 +409,8 @@ fprintf(fid, '|%s', repmat('----|', 1, size(results,2)-1));
 % Loop through each file
 for i = 1:length(fList)
     
-    % If a file name exists
-    if ~isempty(fList{i})
+    % If a file name exists and filename is not userpath
+    if ~isempty(fList{i}) && ~strcmp(fList{i}, 'userpath')
        
         % Write the file name
         fprintf(fid, '\n| %s |', fList{i});
@@ -438,26 +436,33 @@ end
 fclose(fid);
 
 %% Save profiler results
-% Retrieve path to report directory
-[path, ~, ~] = fileparts(char(fullfile(cwd, report)));
+if nargin == 0 || ~strcmp(varargin{1}, 'noprofile')
+    
+    % Retrieve path to report directory
+    [path, ~, ~] = fileparts(char(fullfile(cwd, report)));
 
-% If a folder for this MATLAB version already exists in the report
-% directory
-if isdir(fullfile(path, v{1}{1}))
-    
-    % Log event
-    Event(['Clearing results in ', fullfile(path, v{1}{1})], 'UNIT');
-    
-    % Delete the directory
-    rmdir(fullfile(path, v{1}{1}));
+    % If a folder for this MATLAB version already exists in the report
+    % directory
+    if isdir(fullfile(path, v{1}{1}))
+
+        % Log event
+        Event(['Clearing results in ', fullfile(path, v{1}{1})], 'UNIT');
+
+        % Delete the directory
+        rmdir(fullfile(path, v{1}{1}), 's');
+    end
+
+    % Make a new directory for this MATLAB version
+    mkdir(fullfile(path, v{1}{1}));
+
+    % Save the profiler results to HTML files in the new directory
+    Event(['Saving profiler results to ', fullfile(path, v{1}{1})], 'UNIT');
+    profsave(stats, fullfile(path, v{1}{1}));
+
+else
+    % Otherwise log skip
+    Event('Profiler results were not saved', 'UNIT');
 end
-
-% Make a new directory for this MATLAB version
-mkdir(fullfile(path, v{1}{1}));
-
-% Save the profiler results to HTML files in the new directory
-Event(['Saving profiler results to ', fullfile(path, v{1}{1})], 'UNIT');
-profsave(stats, fullfile(path, v{1}{1}));
 
 % Restore current directory
 Event('Reverting to unit test working directory', 'UNIT');
@@ -777,31 +782,18 @@ function sl = sloc(file)
 %   (3) A comment line, a line that starts with --> % or a line that is
 %       part of a block comment (   %{...%}   )
 %   (4) A blank line
+%   (5) An array or cell array line
 %
 %   Note: If more than one statement is on the line, it counts that as one
-%   line of code.  For instance the following:
+%   line of code.  For instance the following is considered to be one line 
+%   of code:
 %
 %        minx = 32; maxx = 100;
 %
-%   is considered to be one line of code.  Also, if the creation of a
-%   matrix is continued onto several line without the use of '...', SLOC
-%   will deem that as separate lines of code.  Using '...' will "tie" the
-%   lines together.
-%
-%   Example:
-%   ========
-%      sl = sloc('sloc')
-%      sl =
-%                41
-
 %   Copyright 2004-2005 MathWorks, Inc.
 %   Raymond S. Norris (rayn@mathworks.com)
 %   $Revision: 1.4 $ $Date: 2006/03/08 19:50:30 $
-
-if nargin==0
-   help(mfilename)
-   return
-end
+%   Modified by Mark Geurts
 
 % Check to see if the ".m" is missing from the M-file name
 file = deblank(file);
@@ -809,66 +801,59 @@ if length(file)<3 || ~strcmp(file(end-1:end),'.m')
    file = [file '.m'];
 end
 
-fid = fopen(file,'r');
-if fid<0
-   disp(['Failed to open ''' file ''' for reading.'])
-   return
+% Open read handle to file
+fid = fopen(file, 'r');
+
+% If file handle is unavailable, return 0
+if fid < 3
+   sl = 0;
+   return;
 end
 
+% Initialize variables
 sl = 0;
-done = false;
 previous_line = '-99999';
-
-v = ver('matlab');
-atLeastR14 = datenum(v.Date)>=732519;
-
 inblockcomment = false;
 
-while done==false
+% Loop through file contents
+while ~feof(fid)
 
-   % Get the next line
-   m_line = fgetl(fid);
+    % Get the next line, stripping white characters
+    m_line = strtrim(fgetl(fid));
 
-   % If line is -1, we've reached the end of the file
-   if m_line==-1
-      break
-   end
+    % The Profiler doesn't include the "function" line of a function, so
+    % skip it.  Because nested functions may be indented, trim the front of
+    % the line of code.  Since we are string trimming the line, we may as 
+    % well check here if the resulting string it empty.  If any of the above
+    % is true, just continue onto the next line.
+    
+    if strncmp(m_line,'function ', 9) || isempty(m_line)
+        continue
+    end
 
-   % The Profiler doesn't include the "function" line of a function, so
-   % skip it.  Because nested functions may be indented, trim the front of
-   % the line of code.  Since we are string trimming the line, we may as 
-   % well check here if the resulting string it empty.  If any of the above
-   % is true, just continue onto the next line.
-   m_line = strtrim(m_line);
-   if strncmp(m_line,'function ',9) || isempty(m_line)
-      continue
-   end
+    % Check for block comments ( %{...%} )
+    if length(m_line)>1 && strcmp(m_line(1:2),'%{')
+        inblockcomment = true;
+    elseif length(previous_line)>1 && strcmp(previous_line(1:2),'%}')
+        inblockcomment = false;
+    end
 
-   if atLeastR14
-      % In R14, block comments where introduced ( %{...%} )
-      if length(m_line)>1 && ...
-            strcmp(m_line(1:2),'%{')
-         inblockcomment = true;
-      elseif length(previous_line)>1 && ...
-            strcmp(previous_line(1:2),'%}')
-         inblockcomment = false;
-      end
-   end
+    % Check if comment line or if line continued from previous line
+    if ~strcmp(m_line(1),'%') &&  ~strcmp(m_line(1),'''') && ...
+             ~strcmp(m_line(1),']') && ~strcmp(m_line(1),'}') && ...
+            ~(length(previous_line)>2 && ...
+            strcmp(previous_line(end-2:end),'...') && ...
+            ~strcmp(previous_line(1),'%')) && ...
+            isempty(regexp(m_line(1), '[0-9]', 'once')) && ~inblockcomment
+        sl = sl+1;
+    end
 
-   % Check if comment line or if line continued from previous line
-   if ~strcmp(m_line(1),'%') && ...
-         ~(length(previous_line)>2 && ...
-         strcmp(previous_line(end-2:end),'...') && ...
-         ~strcmp(previous_line(1),'%')) && ...
-         ~inblockcomment
-      sl = sl+1;
-   end
-
-   % Keep track of current line to see if the next line is a continuation
-   % of the current
-   previous_line = m_line;
+    % Keep track of current line to see if the next line is a continuation
+    % of the current
+    previous_line = m_line;
 end
 
+% Close file handle
 fclose(fid);
 
 end
