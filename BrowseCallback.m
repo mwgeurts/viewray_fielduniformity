@@ -41,7 +41,7 @@ else
 end
 
 % If a file was selected
-if ~isempty(name)
+if iscell(name) || sum(name ~= 0)
     
     % Start timer
     t = tic;
