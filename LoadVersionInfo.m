@@ -35,11 +35,13 @@ cellarr{1} = system_dependent('getos');
 
 % If windows
 if ispc
+    
     % Get windows system version
     cellarr{1} = [cellarr{1}, ' ', system_dependent('getwinsys')];
 
-% Otherwise, if macintosh
-elseif ismac
+% Otherwise, if unix
+elseif isunix
+    
     % Get unix version
     [status, cmdout] = unix('sw_vers');
     

@@ -32,7 +32,7 @@ set(handles.([head,'display']), 'Value', 1);
 handles = UpdateDisplay(handles, head);
 
 % Set table data
-set(handles.([head,'table']), 'Data', cell(10, 4));
+set(handles.([head,'table']), 'Data', cell(10, 2));
 
 % Log event
 Event([head, ' data cleared from memory']);

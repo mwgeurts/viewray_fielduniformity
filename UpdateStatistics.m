@@ -39,7 +39,7 @@ c = 0;
 % Gamma parameters
 c = c + 1;
 table{c,1} = 'Gamma criteria';
-table{c,2} = sprintf('%0.1f%%/%0.1f mm', [handles.abs, handles.dta]);
+table{c,2} = sprintf('%0.1f%%/%0.1f mm', [handles.abs, handles.dta * 10]);
 
 % Measured time
 c = c + 1;
@@ -102,8 +102,8 @@ if isfield(handles, [head, 'refresults']) && ...
         isfield(handles.([head, 'results']), 'yfwhm')
     
     % Report FWHM difference
-    table{c,2} = sprintf('%0.2f mm', handles.([head, 'results']).yfwhm(1) ...
-        - handles.([head, 'refresults']).yfwhm(1));
+    table{c,2} = sprintf('%0.2f mm', (handles.([head, 'results']).yfwhm(1) ...
+        - handles.([head, 'refresults']).yfwhm(1)) * 10);
 end
 
 % MLC X Flatness
@@ -137,8 +137,8 @@ if isfield(handles, [head, 'refresults']) && ...
         isfield(handles.([head, 'results']), 'xfwhm')
     
     % Report FWHM difference
-    table{c,2} = sprintf('%0.2f mm', handles.([head, 'results']).xfwhm(1) ...
-        - handles.([head, 'refresults']).xfwhm(1));
+    table{c,2} = sprintf('%0.2f mm', (handles.([head, 'results']).xfwhm(1) ...
+        - handles.([head, 'refresults']).xfwhm(1)) * 10);
 end
 
 % MLC Y Flatness
