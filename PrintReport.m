@@ -433,9 +433,6 @@ end
 % Update handles structure
 guidata(hObject, handles);
 
-% Clear temporary variable
-clear data;
-
 % Get temporary file name
 temp = [tempname, '.pdf'];
 
@@ -450,6 +447,9 @@ if data.unitflag == 0
 else
     Event('Skipping file open in unit test framework', 'UNIT');
 end
+
+% Clear temporary variable
+clear data;
 
 % Log completion
 Event(sprintf('Report saved successfully in %0.3f seconds', toc));
