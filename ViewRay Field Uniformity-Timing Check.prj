@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.apptool" plugin-version="1.0">
-  <configuration build-checksum="3336774304" file="/Users/mgeurts/Documents/MATLAB/viewray_fielduniformity/ViewRay Field Uniformity-Timing Check.prj" location="/Users/mgeurts/Documents/MATLAB/viewray_fielduniformity" name="ViewRay Field Uniformity-Timing Check" target="target.mlapps" target-name="Package App">
+  <configuration build-checksum="3900585648" file="/Users/mgeurts/Documents/MATLAB/viewray_fielduniformity/ViewRay Field Uniformity-Timing Check.prj" location="/Users/mgeurts/Documents/MATLAB/viewray_fielduniformity" name="ViewRay Field Uniformity-Timing Check" target="target.mlapps" target-name="Package App">
     <param.appname>ViewRay Field Uniformity-Timing Check</param.appname>
     <param.authnamewatermark>Mark Geurts</param.authnamewatermark>
     <param.email>mark.w.geurts@gmail.com</param.email>
@@ -12,8 +12,8 @@
 When measuring data with IC Profiler, it is assumed that the profiler will be positioned with the electronics pointing toward IEC+Z for a 90 degree gantry angle for 30 seconds of beam on time. The Monte Carlo data assumes that a symmetric 27.3 cm x 27.3 cm is delivered through the front of the IC Profiler. The IC Profiler data must be saved in Multi-Frame format.
 
 IC Profiler is a trademark of Sun Nuclear Corporation. MATLAB® is a registered trademark of MathWorks Inc. ViewRay is a registered trademark of ViewRay Incorporated.</param.description>
-    <param.screenshot>/Users/mgeurts/Desktop/Screen Shot 2015-02-11 at 9.17.10 PM.png</param.screenshot>
-    <param.version>1.1.0</param.version>
+    <param.screenshot />
+    <param.version>1.1.1</param.version>
     <param.products.name>
       <item>MATLAB</item>
       <item>Image Processing Toolbox</item>
@@ -38,6 +38,7 @@ IC Profiler is a trademark of Sun Nuclear Corporation. MATLAB® is a registered 
       <param.company />
       <param.icon />
       <param.icons />
+      <param.screenshot />
       <param.platforms />
     </unset>
     <fileset.main>
@@ -73,7 +74,7 @@ IC Profiler is a trademark of Sun Nuclear Corporation. MATLAB® is a registered 
     </build-deliverables>
     <workflow />
     <matlab>
-      <root>/Applications/MATLAB_R2014b.app</root>
+      <root>/Applications/MATLAB_R2015a.app</root>
       <toolboxes />
     </matlab>
     <platform>
