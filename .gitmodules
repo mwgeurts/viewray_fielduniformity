@@ -1,3 +1,6 @@
 [submodule "snc_extract"]
 	path = snc_extract
 	url = https://github.com/mwgeurts/snc_extract
+[submodule "unit_harness"]
+	path = unit_harness
+	url = https://github.com/mwgeurts/unit_harness

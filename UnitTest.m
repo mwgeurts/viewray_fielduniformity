@@ -12,7 +12,8 @@ function varargout = UnitTest(varargin)
 %       for comparison.  If not provided, it is assumed that this version
 %       is the reference and therefore all comparison tests will "Pass".
 %
-% The following variables are returned upon succesful completion:
+% The following variables are returned upon succesful completion when input 
+% arguments are provided:
 %   varargout{1}: cell array of strings containing preamble text that
 %       summarizes the test, where each cell is a line. This text will
 %       precede the results table in the report.
@@ -26,6 +27,82 @@ function varargout = UnitTest(varargin)
 %       executing this version.  This structure can be passed back into 
 %       subsequent executions of UnitTest as varargin{3} to compare results
 %       between versions (or to a priori validated reference data).
+%
+% The following variables are returned when no input arguments are
+% provided (required only if called by UnitTestHarness):
+%   varargout{1}: string containing the application name (with .m 
+%       extension)
+%   varargout{2}: string containing the path to the version application 
+%       whose results will be used as reference
+%   varargout{3}: 1 x n cell array of strings containing paths to the other 
+%       applications which will be tested
+%   varargout{4}: 2 x m cell array of strings containing the name of each 
+%       test suite (first column) and path to the test data (second column)
+%   varargout{5}: string containing the path and name of report file (will 
+%       be appended by _R201XX.md based on the MATLAB version)
+%
+% Below is an example of how this function is used:
+%
+%   % Declare path to application and test suite
+%   app = '/path/to/application';
+%   test = '/path/to/test/data/';
+%
+%   % Load reference data from .mat file
+%   load('referencedata.mat', '-mat', reference);
+%
+%   % Execute unit test, storing the test results
+%   [preamble, table, footnotes] = UnitTest(app, test, reference);
+%
+%   % Execute unit test again but without reference data, this time storing 
+%   % the output from UnitTest as a new reference file
+%   [preamble, table, footnotes, newreference] = UnitTest(app, test);
+%
+% Author: Mark Geurts, mark.w.geurts@gmail.com
+% Copyright (C) 2015 University of Wisconsin Board of Regents
+%
+% This program is free software: you can redistribute it and/or modify it 
+% under the terms of the GNU General Public License as published by the  
+% Free Software Foundation, either version 3 of the License, or (at your 
+% option) any later version.
+%
+% This program is distributed in the hope that it will be useful, but 
+% WITHOUT ANY WARRANTY; without even the implied warranty of 
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General 
+% Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License along 
+% with this program. If not, see http://www.gnu.org/licenses/.
+
+%% Return Application Information
+% If UnitTest was executed without input arguments
+if nargin == 0
+    
+    % Declare the application filename
+    varargout{1} = 'FieldUniformity.m';
+
+    % Declare current version directory
+    varargout{2} = './';
+
+    % Declare prior version directories
+    varargout{3} = {
+        '../viewray_fielduniformity-1.0'
+        '../viewray_fielduniformity-1.1.0'
+    };
+
+    % Declare location of test data. Column 1 is the name of the 
+    % test suite, column 2 is the absolute path to the file(s)
+    varargout{4} = {
+        '27.3cm'     './test_data/Head1_G90_27p3.prm'
+        '10.5cm'     './test_data/Head3_G90_10p5.prm'
+    };
+
+    % Declare name of report file (will be appended by _R201XX.md based on 
+    % the MATLAB version)
+    varargout{5} = './test_reports/unit_test';
+    
+    % Return to invoking function
+    return;
+end
 
 %% Initialize Unit Testing
 % Initialize static test result text variables
@@ -1138,7 +1215,7 @@ end
 
 % Add result
 results{size(results,1)+1,1} = '15';
-results{size(results,1),2} = 'MLC X Gamma within 0.1';
+results{size(results,1),2} = 'MLC X Gamma within 0.1<sup>1</sup>';
 results{size(results,1),3} = pf;
 
 %% TEST 16: MLC Y Gamma Identical
@@ -1231,7 +1308,7 @@ end
 
 % Add result
 results{size(results,1)+1,1} = '16';
-results{size(results,1),2} = 'MLC Y Gamma within 0.1<sup>2</sup>';
+results{size(results,1),2} = 'MLC Y Gamma within 0.1<sup>1,2</sup>';
 results{size(results,1),3} = pf;
 
 %% TEST 17: Positive Diagonal Gamma Identical
@@ -1560,7 +1637,7 @@ end
 
 % Add result with footnote
 results{size(results,1)+1,1} = '19';
-results{size(results,1),2} = 'Statistics within 0.1 sec/mm/%<sup>4</sup>';
+results{size(results,1),2} = 'Statistics within 0.1 sec/mm/%<sup>1,4</sup>';
 results{size(results,1),3} = pf;
 footnotes{length(footnotes)+1} = ['<sup>4</sup>[#11](../issues/11) In ', ...
     'Version 1.1.0 a bug was identified where flatness was computed', ...
