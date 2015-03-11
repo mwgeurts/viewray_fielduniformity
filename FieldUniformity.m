@@ -153,7 +153,7 @@ handles.rot = 90;
 Event(sprintf('Profiler rotation set to %0.1f degrees', handles.rot));
 
 % Unit test flag. This will be set to 1 if the application is being run as
-% part of unit testing (see UnitTestHarness for more information)
+% part of unit testing (see UnitTest for more information)
 handles.unitflag = 0;
 
 %% Load submodules and toolboxes
