@@ -123,6 +123,11 @@ results = cell(0,3);
 % Initialize footnotes cell array
 footnotes = cell(0,1);
 
+% Initialize reference structure
+if nargout == 4
+    reference = struct;
+end
+
 % Add snc_extract/gamma submodule to search path
 addpath('./snc_extract/gamma');
 
