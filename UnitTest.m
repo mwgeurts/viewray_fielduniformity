@@ -87,6 +87,7 @@ if nargin == 0
     varargout{3} = {
         '../viewray_fielduniformity-1.0'
         '../viewray_fielduniformity-1.1.0'
+        '../viewray_fielduniformity-1.1.1'
     };
 
     % Declare location of test data. Column 1 is the name of the 
