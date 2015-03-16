@@ -93,13 +93,13 @@ if nargin == 0
     % Declare location of test data. Column 1 is the name of the 
     % test suite, column 2 is the absolute path to the file(s)
     varargout{4} = {
-        '27.3cm'     './test_data/Head1_G90_27p3.prm'
-        '10.5cm'     './test_data/Head3_G90_10p5.prm'
+        '27.3cm'     '../test_data/Head1_G90_27p3.prm'
+        '10.5cm'     '../test_data/Head3_G90_10p5.prm'
     };
 
     % Declare name of report file (will be appended by _R201XX.md based on 
     % the MATLAB version)
-    varargout{5} = './test_reports/unit_test';
+    varargout{5} = '../test_reports/unit_test';
     
     % Return to invoking function
     return;
