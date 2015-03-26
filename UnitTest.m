@@ -50,6 +50,9 @@ function varargout = UnitTest(varargin)
 %   % Load reference data from .mat file
 %   load('referencedata.mat', '-mat', reference);
 %
+%   % Execute unit test, printing the test results to stdout
+%   UnitTest(app, test, reference);
+%
 %   % Execute unit test, storing the test results
 %   [preamble, table, footnotes] = UnitTest(app, test, reference);
 %
@@ -109,7 +112,7 @@ end
 % Initialize static test result text variables
 pass = 'Pass';
 fail = 'Fail';
-unk = 'N/A';
+unk = 'N/A'; %#ok<NASGU>
 
 % Initialize preamble text
 preamble = {
@@ -2487,10 +2490,42 @@ results{size(results,1),3} = pf;
 % Close all figures
 close all force;
 
-% Store return variables
-varargout{1} = preamble;
-varargout{2} = results;
-varargout{3} = footnotes;
-if nargout == 4
-    varargout{4} = reference;
+% If no return variables are present, print the results
+if nargout == 0
+    
+    % Print preamble
+    for j = 1:length(preamble)
+        fprintf('%s\n', preamble{j});
+    end
+    fprintf('\n');
+    
+    % Loop through each table row
+    for j = 1:size(results,1)
+        
+        % Print table row
+        fprintf('| %s |\n', strjoin(results(j,:), ' | '));
+       
+        % If this is the first column
+        if j == 1
+            
+            % Also print a separator row
+            fprintf('|%s\n', repmat('----|', 1, size(results,2)));
+        end
+
+    end
+    fprintf('\n');
+    
+    % Print footnotes
+    for j = 1:length(footnotes) 
+        fprintf('%s<br>\n', footnotes{j});
+    end
+    
+% Otherwise, return the results as variables    
+else
+
+    % Store return variables
+    if nargout >= 1; varargout{1} = preamble; end
+    if nargout >= 2; varargout{2} = results; end
+    if nargout >= 3; varargout{3} = footnotes; end
+    if nargout >= 4; varargout{4} = reference; end
 end
