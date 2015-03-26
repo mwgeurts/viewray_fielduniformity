@@ -124,7 +124,9 @@ results = cell(0,3);
 footnotes = cell(0,1);
 
 % Initialize reference structure
-if nargout == 4
+if nargin == 3
+    reference = varargin{3};
+else
     reference = struct;
 end
 
@@ -407,8 +409,8 @@ results{size(results,1),3} = pf;
 %
 % RELEVANT REQUIREMENTS: F002, C013, C014
 %
-% INPUT DATA: Validated expected MLC X (data.refdata.xdata) and MLC Y 
-%   profile data (data.refdata.ydata)
+% INPUT DATA: Validated expected MLC X (reference.refdata.xdata) and MLC Y 
+%   profile data (reference.refdata.ydata)
 %
 % CONDITION A (+): The extracted reference data matches expected MLC X and
 %   MLC Y data exactly (version 1.1.0 and later) or within 1%/0.1 mm.
@@ -426,7 +428,7 @@ if version >= 010100
     if nargin == 3
 
         % If current value equals the reference
-        if isequal(data.refdata.xdata, varargin{3}.refdata.xdata)
+        if isequal(data.refdata.xdata, reference.refdata.xdata)
             xpf = pass;
 
         % Otherwise, it failed
@@ -438,12 +440,12 @@ if version >= 010100
         data.refdata.xdata(1,1) = 0;
         
         % Verify current value now fails
-        if isequal(data.refdata.xdata, varargin{3}.refdata.xdata)
+        if isequal(data.refdata.xdata, reference.refdata.xdata)
             xpf = fail;
         end
         
         % If current value equals the reference
-        if isequal(data.refdata.ydata, varargin{3}.refdata.ydata)
+        if isequal(data.refdata.ydata, reference.refdata.ydata)
             ypf = pass;
 
         % Otherwise, it failed
@@ -455,7 +457,7 @@ if version >= 010100
         data.refdata.ydata(1,1) = 0;
         
         % Verify current value now fails
-        if isequal(data.refdata.ydata, varargin{3}.refdata.ydata)
+        if isequal(data.refdata.ydata, reference.refdata.ydata)
             ypf = fail;
         end
         
@@ -485,11 +487,11 @@ else
         target.start = data.refX(1,1)/10;
         target.width = (data.refX(1,2)-data.refX(1,1))/10;
         target.data = data.refX(2,:)/max(data.refX(2,:));
-        ref.start = varargin{3}.refdata.ydata(1,1);
-        ref.width = varargin{3}.refdata.ydata(1,2) - ...
-            varargin{3}.refdata.ydata(1,1);
-        ref.data = varargin{3}.refdata.ydata(3,:)/...
-            max(varargin{3}.refdata.ydata(3,:));
+        ref.start = reference.refdata.ydata(1,1);
+        ref.width = reference.refdata.ydata(1,2) - ...
+            reference.refdata.ydata(1,1);
+        ref.data = reference.refdata.ydata(3,:)/...
+            max(reference.refdata.ydata(3,:));
         gamma = CalcGamma(ref, target, 1, 0.01, 0);
 
         % If the gamma rate is less than one
@@ -512,11 +514,11 @@ else
         target.start = data.refY(1,1)/10;
         target.width = (data.refY(1,2)-data.refY(1,1))/10;
         target.data = data.refY(2,:)/max(data.refY(2,:));
-        ref.start = varargin{3}.refdata.xdata(1,1);
-        ref.width = varargin{3}.refdata.xdata(1,2) - ...
-            varargin{3}.refdata.xdata(1,1);
-        ref.data = varargin{3}.refdata.xdata(3,:)/...
-            max(varargin{3}.refdata.xdata(3,:));
+        ref.start = reference.refdata.xdata(1,1);
+        ref.width = reference.refdata.xdata(1,2) - ...
+            reference.refdata.xdata(1,1);
+        ref.data = reference.refdata.xdata(3,:)/...
+            max(reference.refdata.xdata(3,:));
         gamma = CalcGamma(ref, target, 1, 0.01, 0);
 
         % If the gamma rate is less than one
@@ -744,7 +746,7 @@ results{size(results,1),3} = time;
 %
 % RELEVANT REQUIREMENTS: F005, F007, F008
 %
-% INPUT DATA: Expected IC Profiler Y-axis data (varargin{3}.ydata)
+% INPUT DATA: Expected IC Profiler Y-axis data (reference.ydata)
 %
 % CONDITION A (+): Extracted Y-axis data exactly matches expected data
 %   (Version 1.1.0 or later) or is within 0.1%
@@ -762,8 +764,8 @@ if version >= 010100
     if nargin == 3
 
         % If current value equals the reference
-        if isequal(data.h1results.ydata(1,:), varargin{3}.ydata(1,:)) && ...
-                isequal(data.h1results.ydata(2,:), varargin{3}.ydata(2,:))
+        if isequal(data.h1results.ydata(1,:), reference.ydata(1,:)) && ...
+                isequal(data.h1results.ydata(2,:), reference.ydata(2,:))
             pf = pass;
         
         % Otherwise the test fails
@@ -772,8 +774,8 @@ if version >= 010100
         end
         
         % If the current xdata equals the reference, record failure
-        if isequal(data.h1results.xdata(1,:), varargin{3}.ydata(1,:)) && ...
-                isequal(data.h1results.xdata(2,:), varargin{3}.ydata(2,:))
+        if isequal(data.h1results.xdata(1,:), reference.ydata(1,:)) && ...
+                isequal(data.h1results.xdata(2,:), reference.ydata(2,:))
             pf = fail;
         end
 
@@ -798,8 +800,8 @@ else
     if nargin == 3
 
         % If current value equals the reference to within 0.1%
-        if isequal(data.h1X(1,:)/10, varargin{3}.ydata(1,:)) && ...
-                max(abs(data.h1X(2,:) - varargin{3}.ydata(2,:))) < 0.001
+        if isequal(data.h1X(1,:)/10, reference.ydata(1,:)) && ...
+                max(abs(data.h1X(2,:) - reference.ydata(2,:))) < 0.001
             pf = pass;
         
         % Otherwise, the test fails
@@ -809,8 +811,8 @@ else
         
         % If current x data equals the reference to within 0.1%, record
         % failure
-        if isequal(data.h1Y(1,:)/10, varargin{3}.ydata(1,:)) && ...
-                max(abs(data.h1Y(2,:) - varargin{3}.ydata(2,:))) < 0.001
+        if isequal(data.h1Y(1,:)/10, reference.ydata(1,:)) && ...
+                max(abs(data.h1Y(2,:) - reference.ydata(2,:))) < 0.001
             pf = fail;
         end
 
@@ -835,7 +837,7 @@ results{size(results,1),3} = pf;
 %
 % RELEVANT REQUIREMENTS: F005, F007, F008
 %
-% INPUT DATA: Expected IC Profiler X-axis data (varargin{3}.xdata)
+% INPUT DATA: Expected IC Profiler X-axis data (reference.xdata)
 %
 % CONDITION A (+): Extracted X-axis data exactly matches expected data
 %   (Version 1.1.0 or later) or is within 0.1%
@@ -853,8 +855,8 @@ if version >= 010100
     if nargin == 3
 
         % If current value equals the reference
-        if isequal(data.h1results.xdata(1,:), varargin{3}.xdata(1,:)) && ...
-                isequal(data.h1results.xdata(2,:), varargin{3}.xdata(2,:))
+        if isequal(data.h1results.xdata(1,:), reference.xdata(1,:)) && ...
+                isequal(data.h1results.xdata(2,:), reference.xdata(2,:))
             pf = pass;
         
         % Otherwise the test fails
@@ -863,8 +865,8 @@ if version >= 010100
         end
         
         % If the current xdata equals the reference, record failure
-        if isequal(data.h1results.ydata(1,:), varargin{3}.xdata(1,:)) && ...
-                isequal(data.h1results.ydata(2,:), varargin{3}.xdata(2,:))
+        if isequal(data.h1results.ydata(1,:), reference.xdata(1,:)) && ...
+                isequal(data.h1results.ydata(2,:), reference.xdata(2,:))
             pf = fail;
         end
 
@@ -886,9 +888,9 @@ else
 
         % If current value equals the reference to within 0.1%
         if isequal(fliplr([data.h1Y(1,1:31) data.h1Y(1,33) ...
-                data.h1Y(1,35:end)]/10), varargin{3}.xdata(1,:)) && ...
+                data.h1Y(1,35:end)]/10), reference.xdata(1,:)) && ...
                 max(abs([data.h1Y(2,1:31) data.h1Y(2,33) ...
-                data.h1Y(2,35:end)]) - varargin{3}.xdata(2,:)) < 0.001
+                data.h1Y(2,35:end)]) - reference.xdata(2,:)) < 0.001
             pf = pass;
         
         % Otherwise, the test fails
@@ -898,8 +900,8 @@ else
         
         % If current x data equals the reference to within 0.1%, record
         % failure
-        if isequal(data.h1X(1,:)/10, varargin{3}.xdata(1,:)) && ...
-                max(abs(data.h1X(2,:) - varargin{3}.xdata(2,:))) < 0.001
+        if isequal(data.h1X(1,:)/10, reference.xdata(1,:)) && ...
+                max(abs(data.h1X(2,:) - reference.xdata(2,:))) < 0.001
             pf = fail;
         end
 
@@ -926,7 +928,7 @@ results{size(results,1),3} = pf;
 % RELEVANT REQUIREMENTS: F005, F007, F008
 %
 % INPUT DATA: Expected IC Profiler positive diagonal data 
-%   (varargin{3}.pdiag)
+%   (reference.pdiag)
 %
 % CONDITION A (+): Extracted positive diagonal data exactly matches 
 %   expected data
@@ -944,8 +946,8 @@ if version >= 010100
     if nargin == 3
 
         % If current value equals the reference
-        if isequal(data.h1results.pdiag(1,:), varargin{3}.pdiag(1,:)) && ...
-                isequal(data.h1results.pdiag(2,:), varargin{3}.pdiag(2,:))
+        if isequal(data.h1results.pdiag(1,:), reference.pdiag(1,:)) && ...
+                isequal(data.h1results.pdiag(2,:), reference.pdiag(2,:))
             pf = pass;
         
         % Otherwise the test fails
@@ -954,8 +956,8 @@ if version >= 010100
         end
 
         % If the negative diagonal equals the reference
-        if isequal(data.h1results.ndiag(1,:), varargin{3}.pdiag(1,:)) && ...
-                isequal(data.h1results.ndiag(2,:), varargin{3}.pdiag(2,:))
+        if isequal(data.h1results.ndiag(1,:), reference.pdiag(1,:)) && ...
+                isequal(data.h1results.ndiag(2,:), reference.pdiag(2,:))
             pf = fail;
         end
         
@@ -993,7 +995,7 @@ footnotes{length(footnotes)+1} = ['<sup>3</sup>Prior to Version 1.1 ', ...
 % RELEVANT REQUIREMENTS: F005, F007, F008
 %
 % INPUT DATA: Expected IC Profiler negative diagonal data 
-%   (varargin{3}.ndiag)
+%   (reference.ndiag)
 %
 % CONDITION A (+): Extracted negative diagonal data exactly matches 
 %   expected data
@@ -1011,8 +1013,8 @@ if version >= 010100
     if nargin == 3
 
         % If current value equals the reference
-        if isequal(data.h1results.ndiag(1,:), varargin{3}.ndiag(1,:)) && ...
-                isequal(data.h1results.ndiag(2,:), varargin{3}.ndiag(2,:))
+        if isequal(data.h1results.ndiag(1,:), reference.ndiag(1,:)) && ...
+                isequal(data.h1results.ndiag(2,:), reference.ndiag(2,:))
             pf = pass;
         
         % Otherwise the test fails
@@ -1021,8 +1023,8 @@ if version >= 010100
         end
 
         % If the positive diagonal equals the reference
-        if isequal(data.h1results.pdiag(1,:), varargin{3}.ndiag(1,:)) && ...
-                isequal(data.h1results.pdiag(2,:), varargin{3}.ndiag(2,:))
+        if isequal(data.h1results.pdiag(1,:), reference.ndiag(1,:)) && ...
+                isequal(data.h1results.pdiag(2,:), reference.ndiag(2,:))
             pf = fail;
         end
         
@@ -1055,7 +1057,7 @@ results{size(results,1),3} = pf;
 %
 % RELEVANT REQUIREMENTS: F006
 %
-% INPUT DATA: Expected IC Profiler timing data (varargin{3}.tdata)
+% INPUT DATA: Expected IC Profiler timing data (reference.tdata)
 %
 % CONDITION A (+): Extracted timing data exactly matches expected data
 %   (Version 1.1.0 or later) or is within 0.1%
@@ -1072,8 +1074,8 @@ if version >= 010100
     if nargin == 3
 
         % If current value equals the reference
-        if isequal(data.h1results.tdata(1,:), varargin{3}.tdata(1,:)) && ...
-                isequal(data.h1results.tdata(2,:), varargin{3}.tdata(2,:))
+        if isequal(data.h1results.tdata(1,:), reference.tdata(1,:)) && ...
+                isequal(data.h1results.tdata(2,:), reference.tdata(2,:))
             pf = pass;
         
         % Otherwise, the test fails
@@ -1082,8 +1084,8 @@ if version >= 010100
         end
         
         % If modified value equals the reference, the test fails
-        if isequal(data.h1results.tdata(1,:), varargin{3}.tdata(1,:)) && ...
-                isequal(data.h1results.tdata(2,:), varargin{3}.tdata(2,:) ...
+        if isequal(data.h1results.tdata(1,:), reference.tdata(1,:)) && ...
+                isequal(data.h1results.tdata(2,:), reference.tdata(2,:) ...
                 * 1.01)
             pf = fail;
         end
@@ -1106,7 +1108,7 @@ else
 
         % If current value equals the reference to within 0.1%
         if max(abs(data.h1T(2,2:end)/max(data.h1T(2,:)) - ...
-                varargin{3}.tdata(2,2:end)/max(varargin{3}.tdata(2,:)))) ...
+                reference.tdata(2,2:end)/max(reference.tdata(2,:)))) ...
                 < 0.001
             pf = pass;
         
@@ -1117,7 +1119,7 @@ else
 
         % If modified value equals the reference, the test fails
         if max(abs(data.h1T(2,2:end)/max(data.h1T(2,:)) - ...
-                (varargin{3}.tdata(2,2:end)/max(varargin{3}.tdata(2,:))) ...
+                (reference.tdata(2,2:end)/max(reference.tdata(2,:))) ...
                 * 1.01)) ...
                 < 0.001
             pf = fail;
@@ -1147,7 +1149,7 @@ results{size(results,1),3} = pf;
 %
 % RELEVANT REQUIREMENTS: F022
 %
-% INPUT DATA: Expected Y-axis Gamma profile (varargin{3}.ygamma)
+% INPUT DATA: Expected Y-axis Gamma profile (reference.ygamma)
 %
 % CONDITION A (+): Computed Y-axis Gamma profile exactly matches expected
 %   profile (Version 1.1.0 or later) or is within 0.1
@@ -1164,8 +1166,8 @@ if version >= 010100
     if nargin == 3
 
         % If current value equals the reference
-        if isequal(data.h1results.ygamma(1,:), varargin{3}.ygamma(1,:)) && ...
-                isequal(data.h1results.ygamma(2,:), varargin{3}.ygamma(2,:))
+        if isequal(data.h1results.ygamma(1,:), reference.ygamma(1,:)) && ...
+                isequal(data.h1results.ygamma(2,:), reference.ygamma(2,:))
             pf = pass;
         
         % Otherwise the test fails
@@ -1174,8 +1176,8 @@ if version >= 010100
         end
         
         % If the modified value equals the reference, the test fails
-        if isequal(data.h1results.ygamma(1,:), varargin{3}.ygamma(1,:)) && ...
-                isequal(data.h1results.ygamma(2,:), varargin{3}.ygamma(2,:) ...
+        if isequal(data.h1results.ygamma(1,:), reference.ygamma(1,:)) && ...
+                isequal(data.h1results.ygamma(2,:), reference.ygamma(2,:) ...
                 * 2)
             pf = fail;
         end
@@ -1198,8 +1200,8 @@ else
     if nargin == 3
 
         % If current value equals the reference to within 0.1
-        if max(abs(data.h1X(3,:) - varargin{3}.ygamma(2,:)) .* ...
-                (abs(varargin{3}.ydata(1,:)) < 15)) < 0.1
+        if max(abs(data.h1X(3,:) - reference.ygamma(2,:)) .* ...
+                (abs(reference.ydata(1,:)) < 15)) < 0.1
             pf = pass;
         
         % Otherwise the test fails
@@ -1208,8 +1210,8 @@ else
         end
         
         % If the modified value equals the reference, the test fails
-        if max(abs(data.h1X(3,:) - varargin{3}.ygamma(2,:) * 2) .* ...
-                (abs(varargin{3}.ydata(1,:)) < 15)) < 0.1
+        if max(abs(data.h1X(3,:) - reference.ygamma(2,:) * 2) .* ...
+                (abs(reference.ydata(1,:)) < 15)) < 0.1
             pf = fail;
         end
 
@@ -1236,7 +1238,7 @@ results{size(results,1),3} = pf;
 %
 % RELEVANT REQUIREMENTS: F022
 %
-% INPUT DATA: Expected X-axis Gamma profile (varargin{3}.xgamma)
+% INPUT DATA: Expected X-axis Gamma profile (reference.xgamma)
 %
 % CONDITION A (+): Computed X-axis Gamma profile exactly matches expected
 %   profile (Version 1.1.0 or later) or is within 0.1
@@ -1253,8 +1255,8 @@ if version >= 010100
     if nargin == 3
 
         % If current value equals the reference
-        if isequal(data.h1results.xgamma(1,:), varargin{3}.xgamma(1,:)) && ...
-                isequal(data.h1results.xgamma(2,:), varargin{3}.xgamma(2,:))
+        if isequal(data.h1results.xgamma(1,:), reference.xgamma(1,:)) && ...
+                isequal(data.h1results.xgamma(2,:), reference.xgamma(2,:))
             pf = pass;
         
         % Otherwise, the test fails
@@ -1263,8 +1265,8 @@ if version >= 010100
         end
         
         % If modified value equals the reference, the test fails
-        if isequal(data.h1results.xgamma(1,:), varargin{3}.xgamma(1,:)) && ...
-                isequal(data.h1results.xgamma(2,:), varargin{3}.xgamma(2,:) ...
+        if isequal(data.h1results.xgamma(1,:), reference.xgamma(1,:)) && ...
+                isequal(data.h1results.xgamma(2,:), reference.xgamma(2,:) ...
                 * 2)
             pf = fail;
         end
@@ -1291,8 +1293,8 @@ else
             data.h1Y(3,35:end)];
         
         % If current value equals the reference to within 0.1
-        if max(abs(h1Y - varargin{3}.xgamma(2,:)) .* ...
-                (abs(varargin{3}.xgamma(1,:)) < 15)) < 0.1
+        if max(abs(h1Y - reference.xgamma(2,:)) .* ...
+                (abs(reference.xgamma(1,:)) < 15)) < 0.1
             pf = pass;
         
         % Otherwise, the test fails
@@ -1301,8 +1303,8 @@ else
         end
         
         % If modified value equals the reference, the test fails
-        if max(abs(h1Y - varargin{3}.xgamma(2,:) * 2) .* ...
-                (abs(varargin{3}.xgamma(1,:)) < 15)) < 0.1
+        if max(abs(h1Y - reference.xgamma(2,:) * 2) .* ...
+                (abs(reference.xgamma(1,:)) < 15)) < 0.1
             pf = fail;
         end
 
@@ -1329,7 +1331,7 @@ results{size(results,1),3} = pf;
 % RELEVANT REQUIREMENTS: F022
 %
 % INPUT DATA: Expected positive diagonal axis Gamma profile 
-%   (varargin{3}.pgamma)
+%   (reference.pgamma)
 %
 % CONDITION A (+): Computed positive diagonal axis Gamma profile exactly 
 %   matches expected profile
@@ -1347,8 +1349,8 @@ if version >= 010100
     if nargin == 3
 
         % If current value equals the reference
-        if isequal(data.h1results.pgamma(1,:), varargin{3}.pgamma(1,:)) && ...
-                isequal(data.h1results.pgamma(2,:), varargin{3}.pgamma(2,:))
+        if isequal(data.h1results.pgamma(1,:), reference.pgamma(1,:)) && ...
+                isequal(data.h1results.pgamma(2,:), reference.pgamma(2,:))
             pf = pass;
         
         % Otherwise, the test fails
@@ -1357,8 +1359,8 @@ if version >= 010100
         end
         
         % If modified value equals the reference, the test fails
-        if isequal(data.h1results.pgamma(1,:), varargin{3}.pgamma(1,:)) && ...
-                isequal(data.h1results.pgamma(2,:), varargin{3}.pgamma(2,:) ...
+        if isequal(data.h1results.pgamma(1,:), reference.pgamma(1,:)) && ...
+                isequal(data.h1results.pgamma(2,:), reference.pgamma(2,:) ...
                 * 2)
             pf = fail;
         end
@@ -1398,7 +1400,7 @@ results{size(results,1),3} = pf;
 % RELEVANT REQUIREMENTS: F022
 %
 % INPUT DATA: Expected negative diagonal axis Gamma profile 
-%   (varargin{3}.ngamma)
+%   (reference.ngamma)
 %
 % CONDITION A (+): Computed negative diagonal axis Gamma profile exactly 
 %   matches expected profile
@@ -1416,8 +1418,8 @@ if version >= 010100
     if nargin == 3
 
         % If current value equals the reference
-        if isequal(data.h1results.ngamma(1,:), varargin{3}.ngamma(1,:)) && ...
-                isequal(data.h1results.ngamma(2,:), varargin{3}.ngamma(2,:))
+        if isequal(data.h1results.ngamma(1,:), reference.ngamma(1,:)) && ...
+                isequal(data.h1results.ngamma(2,:), reference.ngamma(2,:))
             pf = pass;
         
         % Otherwise, the test fails
@@ -1426,8 +1428,8 @@ if version >= 010100
         end
         
         % If modified value equals the reference, the test fails
-        if isequal(data.h1results.ngamma(1,:), varargin{3}.ngamma(1,:)) && ...
-                isequal(data.h1results.ngamma(2,:), varargin{3}.ngamma(2,:) ...
+        if isequal(data.h1results.ngamma(1,:), reference.ngamma(1,:)) && ...
+                isequal(data.h1results.ngamma(2,:), reference.ngamma(2,:) ...
                 * 2)
             pf = fail;
         end
@@ -1466,13 +1468,13 @@ results{size(results,1),3} = pf;
 % RELEVANT REQUIREMENTS: U007, U008, U010, U012, F009, F010, F012, F013,
 %   F016, F019, F020, F026
 %
-% INPUT DATA: Expected beam on time difference (varargin{3}.statbot), MLC X
-%   axis FWHM difference (varargin{3}.statxfwhm), MLC X axis measured
-%   flatness (varargin{3}.xflat), MLC X axis measured symmetry 
-%   (varargin{3}.xsym), MLC X axis max gamma (varargin{3}.xmax), MLC Y axis
-%   FWHM difference (varargin{3}.statyfwhm), MLC Y axis measured flatness 
-%   (varargin{3}.yflat), MLC Y axis measured symmetry (varargin{3}.ysym), 
-%   MLC Y axis max gamma (varargin{3}.ymax)
+% INPUT DATA: Expected beam on time difference (reference.statbot), MLC X
+%   axis FWHM difference (reference.statxfwhm), MLC X axis measured
+%   flatness (reference.xflat), MLC X axis measured symmetry 
+%   (reference.xsym), MLC X axis max gamma (reference.xmax), MLC Y axis
+%   FWHM difference (reference.statyfwhm), MLC Y axis measured flatness 
+%   (reference.yflat), MLC Y axis measured symmetry (reference.ysym), 
+%   MLC Y axis max gamma (reference.ymax)
 %
 % CONDITION A (+): The expected beam on time difference equals the expected
 %   value exactly (Version 1.1.0 and later) or within 0.1 sec
@@ -1530,23 +1532,23 @@ if version >= 010100
 
         % If current value equals the reference
         if isequal(textscan(data.h1table.Data{2,2}, '%f'), ...
-                varargin{3}.statbot) && ...
+                reference.statbot) && ...
                 isequal(textscan(data.h1table.Data{3,2}, '%f'), ...
-                varargin{3}.statxfwhm) && ...
+                reference.statxfwhm) && ...
                 isequal(textscan(data.h1table.Data{4,2}, '%f'), ...
-                varargin{3}.statxflat) && ...
+                reference.statxflat) && ...
                 isequal(textscan(data.h1table.Data{5,2}, '%f'), ...
-                varargin{3}.statxsym) && ...
+                reference.statxsym) && ...
                 isequal(textscan(data.h1table.Data{6,2}, '%f'), ...
-                varargin{3}.statyfwhm) && ...
+                reference.statyfwhm) && ...
                 isequal(textscan(data.h1table.Data{7,2}, '%f'), ...
-                varargin{3}.statyflat) && ...
+                reference.statyflat) && ...
                 isequal(textscan(data.h1table.Data{8,2}, '%f'), ...
-                varargin{3}.statysym) && ...
+                reference.statysym) && ...
                 isequal(textscan(data.h1table.Data{9,2}, '%f'), ...
-                varargin{3}.statxmax) && ...
+                reference.statxmax) && ...
                 isequal(textscan(data.h1table.Data{10,2}, '%f'), ...
-                varargin{3}.statymax)
+                reference.statymax)
             pf = pass;
         
         % Otherwise, the test fails
@@ -1595,23 +1597,23 @@ else
 
         % If current value equals the reference (within 0.1 sec/0.1 mm/0.1%)
         if abs(cell2mat(textscan(data.h1table.Data{4,2}, '%f')) - ...
-                varargin{3}.statbot{1}) < 0.1 && ...
+                reference.statbot{1}) < 0.1 && ...
                 abs(cell2mat(textscan(data.h1table.Data{8,2}, '%f')) - ...
-                varargin{3}.statxfwhm{1}) < 0.1 && ...
+                reference.statxfwhm{1}) < 0.1 && ...
                 abs(cell2mat(textscan(data.h1table.Data{9,2}, '%f')) - ...
-                varargin{3}.statxflat{1}) < 0.1 && ...
+                reference.statxflat{1}) < 0.1 && ...
                 abs(cell2mat(textscan(data.h1table.Data{10,2}, '%f')) - ...
-                varargin{3}.statxsym{1}) < 0.1 && ...
+                reference.statxsym{1}) < 0.1 && ...
                 abs(cell2mat(textscan(data.h1table.Data{14,2}, '%f')) - ...
-                varargin{3}.statyfwhm{1}) < 0.1 && ...
+                reference.statyfwhm{1}) < 0.1 && ...
                 abs(cell2mat(textscan(data.h1table.Data{15,2}, '%f')) - ...
-                varargin{3}.statyflat{1}) < 0.1 && ...
+                reference.statyflat{1}) < 0.1 && ...
                 abs(cell2mat(textscan(data.h1table.Data{16,2}, '%f')) - ...
-                varargin{3}.statysym{1}) < 0.1 && ...
+                reference.statysym{1}) < 0.1 && ...
                 abs(cell2mat(textscan(data.h1table.Data{11,2}, '%f')) - ...
-                varargin{3}.statxmax{1}) < 0.1 && ...
+                reference.statxmax{1}) < 0.1 && ...
                 abs(cell2mat(textscan(data.h1table.Data{17,2}, '%f')) - ...
-                varargin{3}.statymax{1}) < 0.1
+                reference.statymax{1}) < 0.1
             pf = pass;
         
         % Otherwise, the test fails
